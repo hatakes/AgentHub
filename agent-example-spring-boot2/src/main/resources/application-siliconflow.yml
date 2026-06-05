@@ -1,0 +1,11 @@
+agent:
+  example:
+    mock-model:
+      enabled: false
+  model:
+    protocol: openai
+    base-url: ${AGENTHUB_SILICONFLOW_BASE_URL:https://api.siliconflow.cn/v1}
+    api-key: ${AGENTHUB_SILICONFLOW_API_KEY:}
+    model: ${AGENTHUB_MODEL_DS_FAST:deepseek-v4-flash}
+    connect-timeout-ms: 10000
+    read-timeout-ms: 120000

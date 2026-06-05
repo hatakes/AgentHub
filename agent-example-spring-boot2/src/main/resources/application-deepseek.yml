@@ -1,0 +1,11 @@
+agent:
+  example:
+    mock-model:
+      enabled: false
+  model:
+    protocol: openai
+    base-url: ${AGENTHUB_DEEPSEEK_BASE_URL:https://api.deepseek.com}/chat/completions
+    api-key: ${AGENTHUB_DEEPSEEK_API_KEY:}
+    model: ${AGENTHUB_MODEL_DS_FAST:deepseek-v4-flash}
+    connect-timeout-ms: 10000
+    read-timeout-ms: 120000

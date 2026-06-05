@@ -1,0 +1,2 @@
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+com.sean.agenthub.agent.starter.AgentAutoConfiguration
