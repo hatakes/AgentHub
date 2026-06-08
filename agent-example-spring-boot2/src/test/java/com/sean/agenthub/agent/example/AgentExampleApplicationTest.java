@@ -11,6 +11,7 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.junit4.SpringRunner;
 
 /**
@@ -148,5 +149,34 @@ public class AgentExampleApplicationTest {
         Assert.assertEquals("query_budget_balance", events.get(0).getToolName());
         Assert.assertFalse(events.get(0).isSuccess());
         Assert.assertTrue(events.get(0).getErrorMessage().contains("Budget service unavailable"));
+    }
+
+    @Test
+    public void shouldStreamBudgetBalanceToolWithPermissionAndAudit() {
+        AgentRequest request = new AgentRequest();
+        request.setSessionId("s-budget-stream");
+        request.setUserId("finance-admin");
+        request.setMessage("帮我查询预算余额");
+
+        ResponseEntity<String> response = restTemplate.postForEntity("/agent/chat/stream", request, String.class);
+
+        Assert.assertNotNull(response);
+        Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
+        Assert.assertNotNull(response.getBody());
+        Assert.assertTrue(response.getBody().contains("event: tool"));
+        Assert.assertTrue(response.getBody().contains("query_budget_balance"));
+        Assert.assertTrue(response.getBody().contains("event: delta"));
+        Assert.assertTrue(response.getBody().contains("128000.00"));
+        Assert.assertFalse(response.getBody().contains("token"));
+        Assert.assertTrue(response.getBody().contains("event: complete"));
+
+        List<AuditEvent> events = auditService.getEvents();
+        Assert.assertEquals(1, events.size());
+        Assert.assertEquals("s-budget-stream", events.get(0).getSessionId());
+        Assert.assertEquals("finance-admin", events.get(0).getUserId());
+        Assert.assertEquals("query_budget_balance", events.get(0).getToolName());
+        Assert.assertTrue(events.get(0).isSuccess());
+        Assert.assertTrue(events.get(0).getToolResultSummary().contains("128000.00"));
+        Assert.assertFalse(events.get(0).getToolResultSummary().contains("token"));
     }
 }

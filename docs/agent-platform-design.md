@@ -108,10 +108,10 @@ agent-platform
 │  └─ 当前保持单一 http package，后续类明显增多后再整体拆 openai / anthropic / client / codec
 │
 ├─ agent-model-provider-spring-ai
-│  └─ 后续 Spike，用 Spring AI 实现 ModelProvider
+│  └─ Java 17 profile Spike，用 Spring AI ChatModel 实现 ModelProvider
 │
 ├─ agent-model-provider-langchain4j
-│  └─ 后续 Spike，用 LangChain4j 实现 ModelProvider
+│  └─ Java 17 profile Spike，用 LangChain4j ChatModel 实现 ModelProvider
 │
 ├─ agent-model-provider-hutool-ai
 │  └─ 后续 Spike，用 Hutool AI 实现 ModelProvider
@@ -559,7 +559,8 @@ P0 Anthropic-compatible Messages
 P1 Function Calling 边界增强（基础多 ToolCall、Tool 结果消息、流式 ToolCall 已完成）
 P1 JSON Schema Structured Output 基础支持（OpenAI-compatible 透传已完成）
 P2 MCP adapter 设计或 PoC
-P2 Spring AI / LangChain4j / Hutool AI adapter Spike（MVP 验收后再进入）
+P2 Spring AI / LangChain4j adapter Spike（Java 17 profile 下已启动 TEXT_CHAT / TEXT_STREAM / Tool schema 下发 / ToolCall 响应映射）
+P2 Hutool AI adapter Spike（后续候选）
 ```
 
 MVP 阶段协议层优先兼容 OpenAI-compatible 和 Anthropic-compatible 已足够。当前真实模型默认优先 DeepSeek / DS，先用 DS 打稳 AgentRuntime、ToolCall、流式输出和错误恢复；其他模型后续再说。
@@ -572,6 +573,8 @@ LangChain4j：适合 RAG、AI Service、复杂 Tool 和链路编排能力验证
 Hutool AI：适合国内模型轻量快捷调用场景验证
 MCP Java SDK / Spring AI MCP：适合后续 MCP Server / Client 实现
 ```
+
+当前 Spring AI / LangChain4j Spike 仅作为独立 `agent-model-provider-*` 模块接入 `ModelProvider`，通过 `adapters-java17` profile 构建，不改变 `agent-core` 的 JDK 8 边界，也不进入默认 Spring Boot 2 starter 主链路。
 
 MCP 更偏 Tool 生态互联，JSON Schema Structured Output 更偏输出强约束，二者都不应阻塞第一版 Agent SDK 的嵌入式闭环。
 
@@ -841,8 +844,8 @@ HttpJsonClient、ModelProviderJsonSupport、ModelProviderJsonFields 属于包内
 agent-core                    纯核心抽象和默认实现
 agent-model-provider-http     MVP 轻量模型协议适配
 agent-spring-boot-starter     业务系统快速接入
-agent-model-provider-spring-ai 后续 Spring AI 适配 Spike
-agent-model-provider-langchain4j 后续 LangChain4j 适配 Spike
+agent-model-provider-spring-ai Java 17 profile 下的 Spring AI 适配 Spike
+agent-model-provider-langchain4j Java 17 profile 下的 LangChain4j 适配 Spike
 agent-model-provider-hutool-ai 后续 Hutool AI 适配 Spike
 agent-gateway-server          平台化统一接入
 agent-mcp-adapter             MCP 协议适配，优先评估 MCP Java SDK / Spring AI MCP
@@ -1254,8 +1257,8 @@ agent-core -> 具体模型厂商 SDK
 14. [done] 收敛设计文档、进度文档和下一步计划，形成一致开发基线
 15. [next] 整理 MVP 验收清单和对外接入说明
 16. [next] 选择一个真实业务只读 Tool 做试点，验证权限、审计和数据边界
-17. [later] 评估 MCP Java SDK / Spring AI MCP，设计 agent-mcp-adapter 最小 PoC
-18. [later] 其他模型、Spring AI / LangChain4j / Hutool AI adapter Spike
+17. [done] 完成 agent-mcp-adapter 最小映射 PoC
+18. [doing] Spring AI / LangChain4j adapter Spike：Java 17 profile 下已完成 TEXT_CHAT / TEXT_STREAM / Tool schema 下发 / ToolCall 响应映射
 19. [later] 验收后再进入 Gateway / Admin UI / MCP 完整能力阶段
 ```
 

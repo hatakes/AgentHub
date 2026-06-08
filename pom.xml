@@ -23,6 +23,8 @@
     <properties>
         <java.version>1.8</java.version>
         <spring.boot.version>2.3.12.RELEASE</spring.boot.version>
+        <langchain4j.version>1.16.0</langchain4j.version>
+        <spring-ai.version>1.1.7</spring-ai.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -60,4 +62,14 @@
             </plugins>
         </pluginManagement>
     </build>
+
+    <profiles>
+        <profile>
+            <id>adapters-java17</id>
+            <modules>
+                <module>agent-model-provider-langchain4j</module>
+                <module>agent-model-provider-spring-ai</module>
+            </modules>
+        </profile>
+    </profiles>
 </project>

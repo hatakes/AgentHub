@@ -11,6 +11,7 @@
 演示如何注册 AgentTool Bean
 演示如何覆盖默认 ModelProvider
 验证 /agent/chat 接口
+验证 /agent/chat/stream 接口
 验证模型选择 Tool -> Tool 执行 -> 模型总结的闭环
 ```
 
@@ -161,6 +162,8 @@ mvn test
 ```text
 随机端口启动 Spring Boot 示例应用
 通过 HTTP 调用 /agent/chat
+通过 HTTP 调用 /agent/chat/stream
 验证 query_user_info_mock Tool 被执行
+验证 query_budget_balance Tool 权限、审计和 SSE 输出
 验证接口返回 Tool 调用摘要
 ```

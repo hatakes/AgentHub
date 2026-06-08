@@ -34,7 +34,7 @@ DeepSeek / DS 真实链路第一轮验收
 不在第一版实现 Gateway Server
 不在第一版实现 Admin UI
 不在第一版实现写操作 Tool 和人工审批
-Spring AI / LangChain4j / Hutool AI 只作为后续 adapter Spike
+Spring AI / LangChain4j 已作为 Java 17 profile adapter Spike 启动，Hutool AI 后续再评估
 MCP 先做映射设计和最小 PoC，不绑定 Gateway 实现
 ```
 
@@ -186,7 +186,7 @@ Gateway 多租户 MCP 暴露
 新增模型适配
 MiMo / SiliconFlow / 本地模型真实联调
 Anthropic-compatible 真实网关联调
-Spring AI / LangChain4j / Hutool AI adapter Spike
+Hutool AI adapter Spike
 Gateway Server
 Admin UI
 数据库持久化
@@ -198,6 +198,13 @@ Admin UI
 RAG
 Workflow
 多 Agent 协作
+```
+
+已启动但不进入默认主链路：
+
+```text
+agent-model-provider-langchain4j：Java 17 profile 下完成 TEXT_CHAT / TEXT_STREAM / Tool schema 下发 / ToolCall 响应映射
+agent-model-provider-spring-ai：Java 17 profile 下完成 TEXT_CHAT / TEXT_STREAM / Tool schema 下发 / ToolCall 响应映射
 ```
 
 ## 8. 最小验收命令
@@ -216,14 +223,21 @@ curl -sS -N -X POST http://127.0.0.1:8080/agent/chat/stream \
 
 ## 9. 下一次开发入口
 
-下一次开发优先从 `第一版 MVP 真实业务系统接入验收` 开始；完成至少一次真实接入验收后，再按 `docs/agenthub-phase2-decision.md` 选择二阶段方向。
+同级独立最小业务样板 `../agent-business-minimal-demo` 已完成第一份外部业务接入验收记录：
+
+```text
+docs/agenthub-business-acceptance-agent-business-minimal-demo.md
+```
+
+下一次开发优先从 `生产业务系统接入验收` 开始；完成至少一次生产业务接入验收后，再按 `docs/agenthub-phase2-decision.md` 选择二阶段方向。
 
 建议交付物：
 
 ```text
-使用真实业务系统接入 docs/agenthub-starter-integration.md
-替换示例 query_budget_balance 为真实只读查询链路
-用 docs/agenthub-business-acceptance-record.md 完成验收记录
+使用生产业务系统接入 docs/agenthub-starter-integration.md
+选择一个生产只读查询 Tool
+复制 docs/agenthub-business-acceptance-record.md 完成生产验收记录
+对照 docs/agenthub-business-acceptance-agent-business-minimal-demo.md 检查差异
 根据接入结果决定是否进入 Gateway、MCP SDK Adapter 或 Admin UI
 ```
 
@@ -237,6 +251,9 @@ agent-mcp-adapter 最小模块
 AgentTool -> MCP Tool 映射对象
 PermissionEngine / AuditService 在 MCP tools/call 前后复用
 docs/agenthub-business-acceptance-record.md
+docs/agenthub-business-acceptance-agent-business-minimal-demo.md
 docs/agenthub-phase2-decision.md
 ../agent-business-minimal-demo 同级独立最小业务接入样板
+agent-model-provider-langchain4j Java 17 TEXT_CHAT / TEXT_STREAM / Tool schema 下发 / ToolCall 响应映射 adapter Spike
+agent-model-provider-spring-ai Java 17 TEXT_CHAT / TEXT_STREAM / Tool schema 下发 / ToolCall 响应映射 adapter Spike
 ```

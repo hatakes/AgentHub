@@ -36,8 +36,22 @@ mvn install -DskipTests 可完成多模块安装
 当前文档基线结果：
 
 ```text
-Tests run: 61, Failures: 0, Errors: 0, Skipped: 0
+Tests run: 65, Failures: 0, Errors: 0, Skipped: 0
 ```
+
+可选 Java 17 adapter Spike 验证：
+
+```bash
+mvn -Padapters-java17 test
+```
+
+当前 adapter profile 结果：
+
+```text
+Tests run: 73, Failures: 0, Errors: 0, Skipped: 0
+```
+
+说明：`adapters-java17` 只用于验证 Spring AI / LangChain4j 的 `TEXT_CHAT` / `TEXT_STREAM`、Tool schema 下发和 ToolCall 响应映射最小适配，不作为第一版 MVP 通过门槛。
 
 ## 3. 示例应用启动
 
@@ -196,7 +210,7 @@ Admin UI
 数据库持久化
 多租户模型路由
 完整 Structured Output 校验框架
-Spring AI / LangChain4j / Hutool AI adapter
+Spring AI / LangChain4j / Hutool AI adapter 正式接入
 MiMo / SiliconFlow / 本地模型真实联调
 ```
 

@@ -2,7 +2,7 @@
 
 AgentHub is a reusable Agent capability platform prototype.
 
-It focuses on the business Agent abstraction layer: Tool registration, permission, audit, memory, runtime orchestration, and Spring Boot integration. Model invocation can be provided by HTTP-compatible adapters today and by Spring AI, LangChain4j, Hutool AI, or MCP adapters later.
+It focuses on the business Agent abstraction layer: Tool registration, permission, audit, memory, runtime orchestration, and Spring Boot integration. Model invocation can be provided by HTTP-compatible adapters today, with optional Java 17 adapter spikes for Spring AI and LangChain4j.
 
 Current scope:
 
@@ -13,6 +13,8 @@ agent-model-provider-http
 agent-mcp-adapter
 agent-spring-boot-starter
 agent-example-spring-boot2
+agent-model-provider-langchain4j  optional Java 17 profile
+agent-model-provider-spring-ai    optional Java 17 profile
 ```
 
 ## Modules
@@ -24,6 +26,8 @@ agent-model-provider-http  OpenAI / Anthropic 兼容 HTTP 模型协议适配
 agent-mcp-adapter          AgentTool 到 MCP Tool 的最小映射适配
 agent-spring-boot-starter  Spring Boot 2 业务系统接入层
 agent-example-spring-boot2 Spring Boot 2 示例应用
+agent-model-provider-langchain4j LangChain4j ModelProvider Spike，Java 17 profile
+agent-model-provider-spring-ai   Spring AI ModelProvider Spike，Java 17 profile
 ```
 
 Module docs:
@@ -35,6 +39,8 @@ agent-model-provider-http/README.md
 agent-mcp-adapter/README.md
 agent-spring-boot-starter/README.md
 agent-example-spring-boot2/README.md
+agent-model-provider-langchain4j/README.md
+agent-model-provider-spring-ai/README.md
 ```
 
 ## Build
@@ -57,8 +63,22 @@ agent-example-spring-boot2 integration test
 Current result:
 
 ```text
-Tests run: 61, Failures: 0, Errors: 0, Skipped: 0
+Tests run: 65, Failures: 0, Errors: 0, Skipped: 0
 ```
+
+Optional Java 17 adapter Spike:
+
+```bash
+mvn -Padapters-java17 test
+```
+
+Current adapter profile result:
+
+```text
+Tests run: 73, Failures: 0, Errors: 0, Skipped: 0
+```
+
+The Java 17 profile adds `agent-model-provider-langchain4j` and `agent-model-provider-spring-ai`. These modules currently cover `TEXT_CHAT`, `TEXT_STREAM`, Tool schema request mapping, and inbound ToolCall response mapping. Full `TOOL_CALL` capability declaration, tool-result messages, and structured output remain follow-up work.
 
 ## Run Example
 
@@ -165,5 +185,6 @@ docs/agent-platform-next-plan.md
 docs/agenthub-starter-integration.md
 docs/agenthub-mvp-acceptance.md
 docs/agenthub-business-acceptance-record.md
+docs/agenthub-business-acceptance-agent-business-minimal-demo.md
 docs/agenthub-phase2-decision.md
 ```
