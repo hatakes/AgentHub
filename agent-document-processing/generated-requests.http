@@ -1,0 +1,201 @@
+@baseUrl = http://127.0.0.1:8080
+@attachmentId = att-replace-after-upload
+@localFile = /Users/sean/Document/demo-mfundtable.png
+@localImage = /Users/sean/Desktop/id-card.png
+@localMarkdown = /Users/sean/Desktop/policy.md
+@localPdf = /Users/sean/Desktop/policy.pdf
+
+### 1. Upload local text attachment only
+POST {{baseUrl}}/attachments
+Content-Type: multipart/form-data; boundary=AgentHubBoundary
+
+--AgentHubBoundary
+Content-Disposition: form-data; name="file"; filename="id-card.txt"
+Content-Type: text/plain
+
+< {{localFile}}
+--AgentHubBoundary--
+
+### 2. Upload inline text attachment only
+POST {{baseUrl}}/attachments
+Content-Type: multipart/form-data; boundary=AgentHubBoundary
+
+--AgentHubBoundary
+Content-Disposition: form-data; name="file"; filename="id-card.txt"
+Content-Type: text/plain
+
+居民身份证 姓名 张三 公民身份号码 110101200901011234 出生日期 2009-01-01
+--AgentHubBoundary--
+
+### 3. Analyze existing attachment through business API
+POST {{baseUrl}}/attachment-analysis/analyze
+Content-Type: application/json
+
+{
+  "sessionId": "att-business-001",
+  "userId": "attachment-reviewer",
+  "attachmentId": "{{attachmentId}}"
+}
+
+### 4. Upload local text attachment and analyze in one request
+POST {{baseUrl}}/attachment-analysis/analyze-file
+Content-Type: multipart/form-data; boundary=AgentHubBoundary
+
+--AgentHubBoundary
+Content-Disposition: form-data; name="userId"
+
+attachment-reviewer
+--AgentHubBoundary
+Content-Disposition: form-data; name="file"; filename="id-card.txt"
+Content-Type: text/plain
+
+< {{localFile}}
+--AgentHubBoundary--
+
+### 5. Upload inline text and analyze in one request
+POST {{baseUrl}}/attachment-analysis/analyze-file
+Content-Type: multipart/form-data; boundary=AgentHubBoundary
+
+--AgentHubBoundary
+Content-Disposition: form-data; name="userId"
+
+attachment-reviewer
+--AgentHubBoundary
+Content-Disposition: form-data; name="file"; filename="id-card.txt"
+Content-Type: text/plain
+
+居民身份证 姓名 李四 公民身份号码 110101199901011234 出生日期 1999-01-01
+--AgentHubBoundary--
+
+### 6. Upload image mock and analyze in one request
+POST {{baseUrl}}/attachment-analysis/analyze-file
+Content-Type: multipart/form-data; boundary=AgentHubBoundary
+
+--AgentHubBoundary
+Content-Disposition: form-data; name="userId"
+
+attachment-reviewer
+--AgentHubBoundary
+Content-Disposition: form-data; name="file"; filename="id-card.png"
+Content-Type: image/png
+
+居民身份证 姓名 赵六 公民身份号码 110101200901011234 出生日期 2009-01-01
+--AgentHubBoundary--
+
+### 7. Upload local image and analyze through MiMo
+# Start with:
+# mvn -pl agent-document-processing spring-boot:run -Dspring-boot.run.profiles=mimo
+POST {{baseUrl}}/attachment-analysis/analyze-file
+Content-Type: multipart/form-data; boundary=AgentHubBoundary
+
+--AgentHubBoundary
+Content-Disposition: form-data; name="userId"
+
+attachment-reviewer
+--AgentHubBoundary
+Content-Disposition: form-data; name="file"; filename="id-card.png"
+Content-Type: image/png
+
+< {{localImage}}
+--AgentHubBoundary--
+
+### 8. Analyze through AgentHub generic chat API
+POST {{baseUrl}}/agent/chat
+Content-Type: application/json
+
+{
+  "sessionId": "att-chat-001",
+  "userId": "attachment-reviewer",
+  "message": "请分析附件 {{attachmentId}}"
+}
+
+### 9. Permission denied example
+POST {{baseUrl}}/attachment-analysis/analyze-file
+Content-Type: multipart/form-data; boundary=AgentHubBoundary
+
+--AgentHubBoundary
+Content-Disposition: form-data; name="userId"
+
+u001
+--AgentHubBoundary
+Content-Disposition: form-data; name="file"; filename="contract.txt"
+Content-Type: text/plain
+
+合同 甲方 A 公司 乙方 B 公司
+--AgentHubBoundary--
+
+### 10. Normal chat should not trigger attachment tools
+POST {{baseUrl}}/agent/chat
+Content-Type: application/json
+
+{
+  "sessionId": "att-chat-normal",
+  "userId": "attachment-reviewer",
+  "message": "请介绍一下智能附件分析"
+}
+
+### 11. Upload inline Markdown and extract outline
+POST {{baseUrl}}/attachment-analysis/outline-file
+Content-Type: multipart/form-data; boundary=AgentHubBoundary
+
+--AgentHubBoundary
+Content-Disposition: form-data; name="userId"
+
+attachment-reviewer
+--AgentHubBoundary
+Content-Disposition: form-data; name="file"; filename="policy.md"
+Content-Type: text/markdown
+
+# 招生政策解读
+## 报名条件
+考生需要关注报名时间、资格审核和材料提交要求。
+## 录取重点
+重点关注专业组、选科要求、往年位次和风险兜底方案。
+--AgentHubBoundary--
+
+### 12. Upload local Markdown and extract outline
+POST {{baseUrl}}/attachment-analysis/outline-file
+Content-Type: multipart/form-data; boundary=AgentHubBoundary
+
+--AgentHubBoundary
+Content-Disposition: form-data; name="userId"
+
+attachment-reviewer
+--AgentHubBoundary
+Content-Disposition: form-data; name="file"; filename="policy.md"
+Content-Type: text/markdown
+
+< {{localMarkdown}}
+--AgentHubBoundary--
+
+### 13. Upload local PDF and extract outline
+POST {{baseUrl}}/attachment-analysis/outline-file
+Content-Type: multipart/form-data; boundary=AgentHubBoundary
+
+--AgentHubBoundary
+Content-Disposition: form-data; name="userId"
+
+attachment-reviewer
+--AgentHubBoundary
+Content-Disposition: form-data; name="file"; filename="policy.pdf"
+Content-Type: application/pdf
+
+< {{localPdf}}
+--AgentHubBoundary--
+
+
+#####
+
+# curl -sS -X POST http://127.0.0.1:8080/attachment-analysis/analyze
+#  -H 'Content-Type: application/json'
+#  -d '{"sessionId":"att-001","userId":"attachment-reviewer","attachmentId":"att-xxx"}'
+POST {{baseUrl}}/attachment-analysis/analyze
+Content-Type: application/json
+
+{
+  "sessionId": "att-001",
+  "userId": "attachment-reviewer",
+  "attachmentId": "att-xxx"
+}
+
+###

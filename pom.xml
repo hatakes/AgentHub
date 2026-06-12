@@ -18,7 +18,7 @@
         <module>agent-mcp-adapter</module>
         <module>agent-spring-boot-starter</module>
         <module>agent-example-spring-boot2</module>
-        <module>agent-attachment-analysis-demo</module>
+        <module>agent-document-processing</module>
     </modules>
 
     <properties>

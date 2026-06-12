@@ -13,13 +13,13 @@
 2026-06-06 已完成 `../agent-business-minimal-demo` 外部业务样板接入验收记录，详见 `docs/agenthub-business-acceptance-agent-business-minimal-demo.md`。
 2026-06-07 已启动 Spring AI / LangChain4j adapter Spike，新增 JDK 17+ 自动激活 profile `adapters-java17`，当前覆盖 `TEXT_CHAT` / `TEXT_STREAM` / Tool schema 下发 / ToolCall 响应映射。
 2026-06-08 已完成 Spring AI / LangChain4j adapter Spike 的 Tool schema request mapping，仍不声明完整 `TOOL_CALL` 能力，避免绕过 AgentHub Tool 执行、权限和审计边界。
-2026-06-10 已确认智能附件分析适合作为本仓库内的独立业务样板模块推进，推荐命名 `agent-attachment-analysis-demo`；该模块用于验证文件上传、解析、OCR、文档分类、字段抽取、规则校验和审核意见生成链路，但不进入 `agent-core` 平台内核。
-2026-06-10 已新增 `agent-attachment-analysis-demo` 智能附件分析业务样板，完成上传接口、内存附件仓库、附件解析 / 文档分类 / 字段抽取 / 规则校验 / 摘要生成 Tool、样板权限审计和集成测试。
-2026-06-10 已完成 `agent-attachment-analysis-demo` 包结构分层，按 api / application / domain / infrastructure / tool / support 拆分 HTTP 入口、样板模型决策、领域模型、基础设施、AgentTool 和辅助逻辑。
-2026-06-10 已为 `agent-attachment-analysis-demo` 新增业务分析接口：`/attachment-analysis/analyze` 支持分析已有 attachmentId，`/attachment-analysis/analyze-file` 支持其他服务上传并立即分析。
-2026-06-10 已为 `agent-attachment-analysis-demo` 新增附件解析扩展点：`AttachmentContentParser`、文本 parser、图片 mock parser 和 parser registry，Controller 不再直接解析文件 bytes。
-2026-06-11 已完成 `agent-attachment-analysis-demo` 业务接入验收记录，详见 `docs/agenthub-attachment-analysis-acceptance.md`。
-2026-06-11 已补齐 `agent-attachment-analysis-demo` 错误场景验收：不支持文件类型、空解析结果、不存在 attachmentId 均返回可读错误。
+2026-06-10 已确认智能附件分析适合作为本仓库内的独立业务样板模块推进，推荐命名 `agent-document-processing`；该模块用于验证文件上传、解析、OCR、文档分类、字段抽取、规则校验和审核意见生成链路，但不进入 `agent-core` 平台内核。
+2026-06-10 已新增 `agent-document-processing` 智能附件分析业务样板，完成上传接口、内存附件仓库、附件解析 / 文档分类 / 字段抽取 / 规则校验 / 摘要生成 Tool、样板权限审计和集成测试。
+2026-06-10 已完成 `agent-document-processing` 包结构分层，按 api / application / domain / infrastructure / tool / support 拆分 HTTP 入口、样板模型决策、领域模型、基础设施、AgentTool 和辅助逻辑。
+2026-06-10 已为 `agent-document-processing` 新增业务分析接口：`/attachment-analysis/analyze` 支持分析已有 attachmentId，`/attachment-analysis/analyze-file` 支持其他服务上传并立即分析。
+2026-06-10 已为 `agent-document-processing` 新增附件解析扩展点：`AttachmentContentParser`、文本 parser、图片 mock parser 和 parser registry，Controller 不再直接解析文件 bytes。
+2026-06-11 已完成 `agent-document-processing` 业务接入验收记录，详见 `docs/agenthub-attachment-analysis-acceptance.md`。
+2026-06-11 已补齐 `agent-document-processing` 错误场景验收：不支持文件类型、空解析结果、不存在 attachmentId 均返回可读错误。
 
 已确认：
 
@@ -63,7 +63,7 @@ MCP 保留为生态互通协议方向，后续优先评估 MCP Java SDK / Spring
 已有 agent-model-provider-spring-ai Java 17 Spike 单元测试
 已有 agent-spring-boot-starter 自动配置测试
 已有 agent-example-spring-boot2 集成测试
-已有 agent-attachment-analysis-demo 智能附件分析业务样板和集成测试
+已有 agent-document-processing 智能附件分析业务样板和集成测试
 已有 docs/agenthub-attachment-analysis-acceptance.md 智能附件分析业务样板验收记录
 已有 ../agent-business-minimal-demo 同级独立最小业务接入样板
 ```
@@ -163,12 +163,12 @@ MCP 保留为生态互通协议方向，后续优先评估 MCP Java SDK / Spring
 完成 agent-model-provider-langchain4j JDK 17+ profile 下的 TEXT_CHAT / TEXT_STREAM / Tool schema 下发 / ToolCall 响应映射 Spike
 完成 agent-model-provider-spring-ai JDK 17+ profile 下的 TEXT_CHAT / TEXT_STREAM / Tool schema 下发 / ToolCall 响应映射 Spike
 确认智能附件分析业务样板边界：可放在本仓库，但作为独立业务模块通过 starter 接入，不改造 agent-core 为附件平台
-完成 agent-attachment-analysis-demo 第一版接入：上传附件、触发 Agent 分析、多 ToolCall 审计、无权限拒绝和敏感证件号脱敏
-完成 agent-attachment-analysis-demo 分层重构：api / application / domain / infrastructure / tool / support
-完成 agent-attachment-analysis-demo 业务接口补充：分步分析和一体化上传分析并存
-完成 agent-attachment-analysis-demo 文件解析层抽象：text parser 和 image mock parser
-完成 agent-attachment-analysis-demo 业务接入验收记录：docs/agenthub-attachment-analysis-acceptance.md
-完成 agent-attachment-analysis-demo 错误场景验收：不支持文件类型、空解析结果、不存在 attachmentId
+完成 agent-document-processing 第一版接入：上传附件、触发 Agent 分析、多 ToolCall 审计、无权限拒绝和敏感证件号脱敏
+完成 agent-document-processing 分层重构：api / application / domain / infrastructure / tool / support
+完成 agent-document-processing 业务接口补充：分步分析和一体化上传分析并存
+完成 agent-document-processing 文件解析层抽象：text parser 和 image mock parser
+完成 agent-document-processing 业务接入验收记录：docs/agenthub-attachment-analysis-acceptance.md
+完成 agent-document-processing 错误场景验收：不支持文件类型、空解析结果、不存在 attachmentId
 ```
 
 当前 agent-core 包结构：

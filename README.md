@@ -13,7 +13,7 @@ agent-model-provider-http
 agent-mcp-adapter
 agent-spring-boot-starter
 agent-example-spring-boot2
-agent-attachment-analysis-demo
+agent-document-processing
 agent-model-provider-langchain4j  Java 17+ adapter profile
 agent-model-provider-spring-ai    Java 17+ adapter profile
 ```
@@ -27,7 +27,7 @@ agent-model-provider-http  OpenAI / Anthropic 兼容 HTTP 模型协议适配
 agent-mcp-adapter          AgentTool 到 MCP Tool 的最小映射适配
 agent-spring-boot-starter  Spring Boot 2 业务系统接入层
 agent-example-spring-boot2 Spring Boot 2 示例应用
-agent-attachment-analysis-demo 智能附件分析业务样板，验证上传、解析、分类、规则校验和审核意见链路
+agent-document-processing  文档处理能力模块，验证上传、解析、分类、规则校验和审核意见链路
 agent-model-provider-langchain4j LangChain4j ModelProvider Spike，JDK 17+ 自动激活
 agent-model-provider-spring-ai   Spring AI ModelProvider Spike，JDK 17+ 自动激活
 ```
@@ -41,7 +41,7 @@ agent-model-provider-http/README.md
 agent-mcp-adapter/README.md
 agent-spring-boot-starter/README.md
 agent-example-spring-boot2/README.md
-agent-attachment-analysis-demo/README.md
+agent-document-processing/README.md
 agent-model-provider-langchain4j/README.md
 agent-model-provider-spring-ai/README.md
 ```
@@ -61,7 +61,7 @@ agent-model-provider-http  protocol adapter tests with mock HTTP server
 agent-mcp-adapter          MCP Tool mapping and tools/call tests
 agent-spring-boot-starter  auto-configuration tests
 agent-example-spring-boot2 integration test
-agent-attachment-analysis-demo upload and attachment analysis integration tests
+agent-document-processing upload and attachment analysis integration tests
 ```
 
 MVP Java 8 reactor result:
@@ -97,10 +97,10 @@ mvn install -DskipTests
 mvn -pl agent-example-spring-boot2 spring-boot:run
 ```
 
-## Run Attachment Analysis Demo
+## Run Document Processing
 
 ```bash
-mvn -pl agent-attachment-analysis-demo spring-boot:run
+mvn -pl agent-document-processing spring-boot:run
 ```
 
 Upload a text attachment:

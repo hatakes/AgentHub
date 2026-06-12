@@ -130,7 +130,7 @@ agent-platform
 │  ├─ PermissionEngine + AgentTool -> tools/call
 │  └─ 后续优先评估 MCP Java SDK / Spring AI MCP
 │
-├─ agent-attachment-analysis-demo
+├─ agent-document-processing
 │  ├─ 智能附件分析业务样板
 │  ├─ 文件上传和附件 ID 管理
 │  ├─ 文件解析 / OCR / 文档类型识别
@@ -238,7 +238,7 @@ Agent / LLM 调度
 推荐模块：
 
 ```text
-agent-attachment-analysis-demo
+agent-document-processing
 ```
 
 定位：

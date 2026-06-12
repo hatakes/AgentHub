@@ -1,9 +1,9 @@
-# AgentHub 业务接入验收记录：agent-attachment-analysis-demo
+# AgentHub 业务接入验收记录：agent-document-processing
 
 ## 1. 接入系统信息
 
 ```text
-业务系统名称：agent-attachment-analysis-demo
+业务系统名称：agent-document-processing
 业务系统负责人：Sean
 接入分支 / 版本：0.1.0-SNAPSHOT
 JDK 版本：本机 Maven 运行环境，JDK 17+ reactor 已验证
@@ -163,7 +163,7 @@ attachment:
 模块测试：
 
 ```bash
-mvn -pl agent-attachment-analysis-demo test
+mvn -pl agent-document-processing test
 ```
 
 MVP 主 reactor：
@@ -181,7 +181,7 @@ mvn test
 启动样板：
 
 ```bash
-mvn -pl agent-attachment-analysis-demo spring-boot:run
+mvn -pl agent-document-processing spring-boot:run
 ```
 
 上传文本附件：
@@ -242,7 +242,7 @@ curl -sS -F 'userId=u001' \
 
 | 项目 | 结果 | 证据 |
 |------|------|------|
-| `mvn -pl agent-attachment-analysis-demo -am test` 通过 | 通过 | 2026-06-12 本地执行，12 个附件样板测试通过，依赖模块测试同步通过 |
+| `mvn -pl agent-document-processing -am test` 通过 | 通过 | 2026-06-12 本地执行，12 个附件样板测试通过，依赖模块测试同步通过 |
 | `mvn '-P!adapters-java17' test` 通过 | 通过 | 2026-06-12 本地执行，74 tests passed |
 | `mvn test` 通过 | 通过 | 2026-06-12 本地执行，82 tests passed |
 | `git diff --check` 通过 | 通过 | 2026-06-12 本地执行，无输出 |

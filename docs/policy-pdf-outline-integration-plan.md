@@ -16,7 +16,7 @@
 
 这个流程可以沉淀为 AgentHub 的一个文件分析业务样板，面向“多政策文件整合、提纲梳理、决策建议生成、报告导出”等场景。
 
-建议先接入到 `agent-attachment-analysis-demo`，不要放入 `agent-core`。原因是 PDF 解析、OCR、政策领域提示词、报告模板、导出格式都属于业务能力；`agent-core` 只负责 Agent Runtime、Tool、权限、审计、记忆和模型抽象。
+建议先接入到 `agent-document-processing`，不要放入 `agent-core`。原因是 PDF 解析、OCR、政策领域提示词、报告模板、导出格式都属于业务能力；`agent-core` 只负责 Agent Runtime、Tool、权限、审计、记忆和模型抽象。
 
 ## 2. 目标
 
@@ -41,13 +41,13 @@
 继续使用现有模块：
 
 ```text
-agent-attachment-analysis-demo
+agent-document-processing
 ```
 
 推荐新增包：
 
 ```text
-agent-attachment-analysis-demo/src/main/java/com/sean/agenthub/agent/attachment/policy
+agent-document-processing/src/main/java/com/sean/agenthub/agent/attachment/policy
 ├─ api
 ├─ application
 ├─ domain
@@ -62,7 +62,7 @@ agent-attachment-analysis-demo/src/main/java/com/sean/agenthub/agent/attachment/
 agent-policy-document-demo
 ```
 
-第一阶段更建议先留在 `agent-attachment-analysis-demo`，复用上传、解析、Tool、权限、审计、模型调用链路。
+第一阶段更建议先留在 `agent-document-processing`，复用上传、解析、Tool、权限、审计、模型调用链路。
 
 ## 4. 推荐业务流程
 
@@ -218,7 +218,7 @@ PDFBox 渲染页面
 
 ## 7. Tool 设计
 
-建议新增 4 个 Tool。全部放在 `agent-attachment-analysis-demo/src/main/java/.../tool`。
+建议新增 4 个 Tool。全部放在 `agent-document-processing/src/main/java/.../tool`。
 
 ### 7.1 extract_policy_outline
 
@@ -318,7 +318,7 @@ PDF 导出建议优先级：
 
 ## 8. ModelProvider 编排策略
 
-当前 `agent-attachment-analysis-demo` 有 `AttachmentAnalysisModelProvider`，它是规则型 mock provider，会根据用户消息返回固定 ToolCall。
+当前 `agent-document-processing` 有 `AttachmentAnalysisModelProvider`，它是规则型 mock provider，会根据用户消息返回固定 ToolCall。
 
 建议新增：
 
@@ -381,7 +381,7 @@ userId=attachment-reviewer
 第一阶段使用本地目录：
 
 ```text
-agent-attachment-analysis-demo/work/policy-tasks/{taskId}/
+agent-document-processing/work/policy-tasks/{taskId}/
 ├─ uploads/
 ├─ parsed/
 ├─ report.md
@@ -391,7 +391,7 @@ agent-attachment-analysis-demo/work/policy-tasks/{taskId}/
 仓库 `.gitignore` 应忽略：
 
 ```text
-agent-attachment-analysis-demo/work/
+agent-document-processing/work/
 ```
 
 后续可替换为对象存储或业务系统文件服务。
@@ -405,7 +405,7 @@ agent:
   attachment:
     policy:
       enabled: true
-      work-dir: agent-attachment-analysis-demo/work/policy-tasks
+      work-dir: agent-document-processing/work/policy-tasks
       max-files: 10
       max-file-size-mb: 50
       pdf:
@@ -586,7 +586,7 @@ PolicyDocumentAnalysisApplicationTest
 短期落点：
 
 ```text
-agent-attachment-analysis-demo
+agent-document-processing
 ```
 
 核心新增能力：

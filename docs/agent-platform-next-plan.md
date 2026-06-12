@@ -50,14 +50,14 @@ MCP 先做映射设计和最小 PoC，不绑定 Gateway 实现
 推荐模块：
 
 ```text
-agent-attachment-analysis-demo
+agent-document-processing
 ```
 
 设计边界：
 
 ```text
-agent-attachment-analysis-demo 可以放在本仓库
-agent-attachment-analysis-demo 通过 agent-spring-boot-starter 接入 AgentHub
+agent-document-processing 可以放在本仓库
+agent-document-processing 通过 agent-spring-boot-starter 接入 AgentHub
 agent-core 只保留 AgentRuntime、AgentTool、权限、审计、记忆和模型抽象
 附件存储、OCR、解析、规则、审核意见模板都属于业务样板模块
 ```
@@ -103,7 +103,7 @@ OCR 或解析失败时返回可读错误
 
 状态：已完成
 
-`agent-attachment-analysis-demo` 第一版快速验证链路后，已按 api / application / domain / infrastructure / tool / support 完成包结构分层。后续扩展真实 OCR、文件解析或更多材料类型时，继续沿用该边界。
+`agent-document-processing` 第一版快速验证链路后，已按 api / application / domain / infrastructure / tool / support 完成包结构分层。后续扩展真实 OCR、文件解析或更多材料类型时，继续沿用该边界。
 
 目标包结构：
 
@@ -132,9 +132,9 @@ com.sean.agenthub.agent.attachment
 验收：
 
 ```text
-agent-attachment-analysis-demo 不再把所有类型放在一个目录
+agent-document-processing 不再把所有类型放在一个目录
 包名能体现 api / application / domain / infrastructure / tool 边界
-mvn -pl agent-attachment-analysis-demo test 通过
+mvn -pl agent-document-processing test 通过
 mvn '-P!adapters-java17' test 通过
 ```
 
@@ -333,7 +333,7 @@ docs/agenthub-business-acceptance-agent-business-minimal-demo.md
 
 下一次开发优先从 `生产业务系统接入验收` 开始；完成至少一次生产业务接入验收后，再按 `docs/agenthub-phase2-decision.md` 选择二阶段方向。
 
-如果选择先做智能附件分析样板，则从 `agent-attachment-analysis-demo` 开始，目标是完成一个通用附件分析最小闭环，而不是直接建设身份证专用 Agent。
+如果选择先做智能附件分析样板，则从 `agent-document-processing` 开始，目标是完成一个通用附件分析最小闭环，而不是直接建设身份证专用 Agent。
 
 建议交付物：
 
@@ -343,7 +343,7 @@ docs/agenthub-business-acceptance-agent-business-minimal-demo.md
 复制 docs/agenthub-business-acceptance-record.md 完成生产验收记录
 对照 docs/agenthub-business-acceptance-agent-business-minimal-demo.md 检查差异
 根据接入结果决定是否进入 Gateway、MCP SDK Adapter 或 Admin UI
-或新增 agent-attachment-analysis-demo，完成智能附件分析业务样板验收
+或新增 agent-document-processing，完成智能附件分析业务样板验收
 ```
 
 已完成交付物：
@@ -359,7 +359,7 @@ docs/agenthub-business-acceptance-record.md
 docs/agenthub-business-acceptance-agent-business-minimal-demo.md
 docs/agenthub-phase2-decision.md
 ../agent-business-minimal-demo 同级独立最小业务接入样板
-agent-attachment-analysis-demo 智能附件分析业务样板第一版
+agent-document-processing 智能附件分析业务样板第一版
 docs/agenthub-attachment-analysis-acceptance.md 智能附件分析业务样板验收记录
 agent-model-provider-langchain4j Java 17 TEXT_CHAT / TEXT_STREAM / Tool schema 下发 / ToolCall 响应映射 adapter Spike
 agent-model-provider-spring-ai Java 17 TEXT_CHAT / TEXT_STREAM / Tool schema 下发 / ToolCall 响应映射 adapter Spike

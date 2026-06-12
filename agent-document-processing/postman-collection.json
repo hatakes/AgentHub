@@ -1,0 +1,227 @@
+{
+  "info": {
+    "name": "AgentHub Attachment Analysis Demo",
+    "_postman_id": "68c5c2e0-1f6b-4a25-9af9-document-processing",
+    "description": "Postman collection for agent-document-processing. Start the default profile with: mvn -pl agent-document-processing spring-boot:run. For real image parsing, start with: mvn -pl agent-document-processing spring-boot:run -Dspring-boot.run.profiles=mimo. Business analysis APIs return both answer and structured analysis fields.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:8080"
+    },
+    {
+      "key": "attachmentId",
+      "value": "att-replace-after-upload"
+    },
+    {
+      "key": "localImage",
+      "value": "/Users/sean/Desktop/id-card.png"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Upload attachment only",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "file",
+              "type": "file",
+              "src": []
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{baseUrl}}/attachments",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "attachments"
+          ]
+        },
+        "description": "Choose a local .txt file in the file field. Copy the returned attachmentId into the collection variable attachmentId."
+      }
+    },
+    {
+      "name": "2. Analyze existing attachment",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"sessionId\": \"att-business-001\",\n  \"userId\": \"attachment-reviewer\",\n  \"attachmentId\": \"{{attachmentId}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/attachment-analysis/analyze",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "attachment-analysis",
+            "analyze"
+          ]
+        }
+      }
+    },
+    {
+      "name": "3. Upload and analyze file",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "userId",
+              "value": "attachment-reviewer",
+              "type": "text"
+            },
+            {
+              "key": "file",
+              "type": "file",
+              "src": []
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{baseUrl}}/attachment-analysis/analyze-file",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "attachment-analysis",
+            "analyze-file"
+          ]
+        },
+        "description": "Choose a local .txt file in the file field. This endpoint uploads the file and immediately runs attachment analysis."
+      }
+    },
+    {
+      "name": "4. Upload and analyze image with MiMo",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "userId",
+              "value": "attachment-reviewer",
+              "type": "text"
+            },
+            {
+              "key": "file",
+              "type": "file",
+              "src": "{{localImage}}"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{baseUrl}}/attachment-analysis/analyze-file",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "attachment-analysis",
+            "analyze-file"
+          ]
+        },
+        "description": "Start the app with the mimo profile, then choose a local image file. Example model env: AGENTHUB_MODEL_MIMO_IMAGE=mimo-v2-omni."
+      }
+    },
+    {
+      "name": "5. Analyze through AgentHub chat",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"sessionId\": \"att-chat-001\",\n  \"userId\": \"attachment-reviewer\",\n  \"message\": \"请分析附件 {{attachmentId}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/agent/chat",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "agent",
+            "chat"
+          ]
+        }
+      }
+    },
+    {
+      "name": "6. Permission denied example",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "userId",
+              "value": "u001",
+              "type": "text"
+            },
+            {
+              "key": "file",
+              "type": "file",
+              "src": []
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{baseUrl}}/attachment-analysis/analyze-file",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "attachment-analysis",
+            "analyze-file"
+          ]
+        }
+      }
+    },
+    {
+      "name": "7. Normal chat does not trigger attachment tools",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"sessionId\": \"att-chat-normal\",\n  \"userId\": \"attachment-reviewer\",\n  \"message\": \"请介绍一下智能附件分析\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/agent/chat",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "agent",
+            "chat"
+          ]
+        }
+      }
+    }
+  ]
+}
