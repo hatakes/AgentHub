@@ -2,10 +2,10 @@
 
 LangChain4j adapter Spike for AgentHub `ModelProvider`.
 
-This module is Java 17+ only and is not part of the default Java 8 reactor. Build it with:
+This module is Java 17+ only. The root `adapters-java17` profile activates automatically on JDK 17+, so Maven and IDE imports should include it when the project JDK is 17 or newer.
 
 ```bash
-mvn -Padapters-java17 test
+mvn test
 ```
 
 Current scope:

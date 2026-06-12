@@ -1,0 +1,18 @@
+attachment:
+  parser:
+    image:
+      mode: mimo
+      mimo:
+        base-url: ${AGENTHUB_MIMO_BASE_URL:https://api.xiaomimimo.com/v1}
+        api-key: ${AGENTHUB_MIMO_API_KEY:}
+        model: ${AGENTHUB_MODEL_MIMO_IMAGE:mimo-v2-omni}
+        connect-timeout-ms: 10000
+        read-timeout-ms: 120000
+  outline:
+    mode: mimo
+    mimo:
+      base-url: ${AGENTHUB_MIMO_BASE_URL:https://api.xiaomimimo.com/v1}
+      api-key: ${AGENTHUB_MIMO_API_KEY:}
+      model: ${AGENTHUB_MODEL_MIMO_TEXT:mimo-v2.5-pro}
+      connect-timeout-ms: 10000
+      read-timeout-ms: 120000

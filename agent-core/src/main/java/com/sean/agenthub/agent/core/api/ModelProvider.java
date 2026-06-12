@@ -3,6 +3,8 @@ package com.sean.agenthub.agent.core.api;
 import com.sean.agenthub.agent.core.model.ModelRequest;
 import com.sean.agenthub.agent.core.capability.ModelProviderCapability;
 import com.sean.agenthub.agent.core.model.ModelResponse;
+import com.sean.agenthub.agent.core.model.ToolCall;
+
 import java.util.EnumSet;
 import java.util.Set;
 
@@ -41,7 +43,7 @@ public interface ModelProvider {
         try {
             ModelResponse response = chat(request);
             if (response.hasToolCalls()) {
-                for (com.sean.agenthub.agent.core.model.ToolCall toolCall : response.getToolCalls()) {
+                for (ToolCall toolCall : response.getToolCalls()) {
                     listener.onToolCall(toolCall);
                 }
                 listener.onComplete();

@@ -108,10 +108,10 @@ agent-platform
 │  └─ 当前保持单一 http package，后续类明显增多后再整体拆 openai / anthropic / client / codec
 │
 ├─ agent-model-provider-spring-ai
-│  └─ Java 17 profile Spike，用 Spring AI ChatModel 实现 ModelProvider
+│  └─ Java 17+ profile Spike，用 Spring AI ChatModel 实现 ModelProvider
 │
 ├─ agent-model-provider-langchain4j
-│  └─ Java 17 profile Spike，用 LangChain4j ChatModel 实现 ModelProvider
+│  └─ Java 17+ profile Spike，用 LangChain4j ChatModel 实现 ModelProvider
 │
 ├─ agent-model-provider-hutool-ai
 │  └─ 后续 Spike，用 Hutool AI 实现 ModelProvider
@@ -129,6 +129,13 @@ agent-platform
 │  ├─ ToolRegistry -> tools/list
 │  ├─ PermissionEngine + AgentTool -> tools/call
 │  └─ 后续优先评估 MCP Java SDK / Spring AI MCP
+│
+├─ agent-attachment-analysis-demo
+│  ├─ 智能附件分析业务样板
+│  ├─ 文件上传和附件 ID 管理
+│  ├─ 文件解析 / OCR / 文档类型识别
+│  ├─ 字段抽取 / 规则校验 / 风险识别
+│  └─ 通过 agent-spring-boot-starter 接入 AgentHub，不进入 agent-core
 │
 └─ agent-admin-ui
    ├─ Tool 管理
@@ -162,6 +169,7 @@ agent-platform
 表单自动填写
 报表解释
 业务数据查询
+智能附件分析
 ```
 
 优点：
@@ -221,6 +229,100 @@ Agent / LLM 调度
 初期设计复杂度更高
 需要业务系统提供标准 API
 需要设计权限映射
+```
+
+### 4.3 智能附件分析业务样板
+
+智能附件分析适合作为 AgentHub 的业务接入样板放在本仓库中，但边界应保持为独立业务模块或示例应用，不应直接进入 `agent-core`、`agent-spring-boot-starter` 或模型 provider 模块。
+
+推荐模块：
+
+```text
+agent-attachment-analysis-demo
+```
+
+定位：
+
+```text
+验证 AgentHub 在文件类业务场景中的 Tool 调度、权限、审计和模型总结能力
+沉淀业务系统接入模式，而不是扩展 AgentHub 平台内核
+先做通用附件分析入口，不直接绑定身份证等单一材料类型
+```
+
+推荐能力拆分：
+
+```text
+AttachmentUploadController    接收附件并生成 attachmentId
+FileParseTool                 解析 PDF / Word / 图片 / Excel 等文件内容或元数据
+OcrTool                       对图片或扫描件执行 OCR
+DocumentClassifyTool          识别附件类型，例如身份证、合同、发票、证明材料
+InfoExtractTool               按附件类型抽取结构化字段
+RuleCheckTool                 执行业务规则校验，例如年龄、有效期、材料完整性
+RiskDetectTool                识别缺失、矛盾、过期、疑似伪造等风险
+SummaryTool                   生成附件分析摘要和审核意见
+```
+
+推荐包结构：
+
+```text
+com.sean.agenthub.agent.attachment
+├─ AttachmentAnalysisApplication
+├─ api
+│  └─ AttachmentUploadController
+├─ application
+│  ├─ AttachmentAnalysisModelProvider
+│  └─ AttachmentAnalysisService
+├─ domain
+│  ├─ AttachmentRecord
+│  ├─ AttachmentAnalysisResult
+│  ├─ DocumentType
+│  └─ RuleCheckResult
+├─ infrastructure
+│  ├─ AttachmentRepository
+│  ├─ AttachmentAuditService
+│  └─ AttachmentPermissionEngine
+├─ tool
+│  ├─ ParseAttachmentTool
+│  ├─ OcrAttachmentTool
+│  ├─ ClassifyDocumentTool
+│  ├─ ExtractDocumentFieldsTool
+│  ├─ CheckDocumentRulesTool
+│  └─ SummarizeAttachmentAnalysisTool
+└─ support
+   └─ AttachmentToolSupport
+```
+
+分层原则：
+
+```text
+api 只放 HTTP 入口和请求响应 DTO
+application 编排附件分析用例和样板模型决策
+domain 放附件、文档类型、抽取字段、规则结果等业务模型
+infrastructure 放内存仓库、权限、审计、后续 OCR / 文件解析 adapter
+tool 只放 AgentTool 适配层，Tool 内部尽量调用 application / domain 能力
+support 只放当前样板临时工具类，稳定后应下沉到明确的 domain 或 infrastructure 类型
+```
+
+执行原则：
+
+```text
+确定性规则优先由业务代码执行，例如年龄计算、是否成年、有效期判断
+LLM 负责分类辅助、字段归纳、自然语言审核意见生成
+敏感字段在 Tool 返回和审计记录中默认脱敏
+附件原文、OCR 原始结果和结构化结果属于业务数据，不进入 agent-core
+```
+
+第一版最小闭环：
+
+```text
+上传附件，返回 attachmentId
+通过 /agent/chat 或业务分析接口触发附件分析
+支持 mock OCR 或本地解析实现
+识别 documentType
+抽取一组结构化字段
+执行至少一条确定性业务规则
+生成结构化分析结果和审核意见
+记录 Tool 调用审计
 ```
 
 ## 5. 核心抽象
@@ -559,7 +661,7 @@ P0 Anthropic-compatible Messages
 P1 Function Calling 边界增强（基础多 ToolCall、Tool 结果消息、流式 ToolCall 已完成）
 P1 JSON Schema Structured Output 基础支持（OpenAI-compatible 透传已完成）
 P2 MCP adapter 设计或 PoC
-P2 Spring AI / LangChain4j adapter Spike（Java 17 profile 下已启动 TEXT_CHAT / TEXT_STREAM / Tool schema 下发 / ToolCall 响应映射）
+P2 Spring AI / LangChain4j adapter Spike（JDK 17+ 自动激活 profile 下已启动 TEXT_CHAT / TEXT_STREAM / Tool schema 下发 / ToolCall 响应映射）
 P2 Hutool AI adapter Spike（后续候选）
 ```
 
@@ -574,7 +676,7 @@ Hutool AI：适合国内模型轻量快捷调用场景验证
 MCP Java SDK / Spring AI MCP：适合后续 MCP Server / Client 实现
 ```
 
-当前 Spring AI / LangChain4j Spike 仅作为独立 `agent-model-provider-*` 模块接入 `ModelProvider`，通过 `adapters-java17` profile 构建，不改变 `agent-core` 的 JDK 8 边界，也不进入默认 Spring Boot 2 starter 主链路。
+当前 Spring AI / LangChain4j Spike 仅作为独立 `agent-model-provider-*` 模块接入 `ModelProvider`，通过 JDK 17+ 自动激活的 `adapters-java17` profile 构建，不改变 `agent-core` 的 JDK 8 边界，也不进入默认 Spring Boot 2 starter 主链路。
 
 MCP 更偏 Tool 生态互联，JSON Schema Structured Output 更偏输出强约束，二者都不应阻塞第一版 Agent SDK 的嵌入式闭环。
 
@@ -844,8 +946,8 @@ HttpJsonClient、ModelProviderJsonSupport、ModelProviderJsonFields 属于包内
 agent-core                    纯核心抽象和默认实现
 agent-model-provider-http     MVP 轻量模型协议适配
 agent-spring-boot-starter     业务系统快速接入
-agent-model-provider-spring-ai Java 17 profile 下的 Spring AI 适配 Spike
-agent-model-provider-langchain4j Java 17 profile 下的 LangChain4j 适配 Spike
+agent-model-provider-spring-ai JDK 17+ profile 下的 Spring AI 适配 Spike
+agent-model-provider-langchain4j JDK 17+ profile 下的 LangChain4j 适配 Spike
 agent-model-provider-hutool-ai 后续 Hutool AI 适配 Spike
 agent-gateway-server          平台化统一接入
 agent-mcp-adapter             MCP 协议适配，优先评估 MCP Java SDK / Spring AI MCP
@@ -1258,7 +1360,7 @@ agent-core -> 具体模型厂商 SDK
 15. [next] 整理 MVP 验收清单和对外接入说明
 16. [next] 选择一个真实业务只读 Tool 做试点，验证权限、审计和数据边界
 17. [done] 完成 agent-mcp-adapter 最小映射 PoC
-18. [doing] Spring AI / LangChain4j adapter Spike：Java 17 profile 下已完成 TEXT_CHAT / TEXT_STREAM / Tool schema 下发 / ToolCall 响应映射
+18. [doing] Spring AI / LangChain4j adapter Spike：JDK 17+ profile 下已完成 TEXT_CHAT / TEXT_STREAM / Tool schema 下发 / ToolCall 响应映射
 19. [later] 验收后再进入 Gateway / Admin UI / MCP 完整能力阶段
 ```
 

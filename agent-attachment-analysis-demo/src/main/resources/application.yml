@@ -1,0 +1,8 @@
+agent:
+  enabled: true
+  model:
+    protocol: echo
+
+attachment:
+  mock-model:
+    enabled: true

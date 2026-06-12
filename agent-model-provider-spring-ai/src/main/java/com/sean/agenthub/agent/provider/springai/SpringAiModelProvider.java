@@ -14,6 +14,8 @@ import com.sean.agenthub.agent.core.model.ToolCall;
 import com.sean.agenthub.agent.core.tool.ToolSchema;
 import com.sean.agenthub.agent.core.tool.ToolSchemaProperty;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
@@ -25,6 +27,7 @@ import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.UserMessage;
+import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.model.Generation;
 import org.springframework.ai.chat.prompt.Prompt;
@@ -39,10 +42,10 @@ import org.springframework.ai.tool.definition.ToolDefinition;
  * @author Sean
  */
 public class SpringAiModelProvider implements ModelProvider {
-    private final org.springframework.ai.chat.model.ChatModel chatModel;
+    private final ChatModel chatModel;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public SpringAiModelProvider(org.springframework.ai.chat.model.ChatModel chatModel) {
+    public SpringAiModelProvider(ChatModel chatModel) {
         if (chatModel == null) {
             throw new IllegalArgumentException("chatModel must not be null");
         }
@@ -113,11 +116,25 @@ public class SpringAiModelProvider implements ModelProvider {
         if (toolCallbacks.isEmpty()) {
             return new Prompt(toMessages(request));
         }
-        ToolCallingChatOptions options = ToolCallingChatOptions.builder()
-                .toolCallbacks(toolCallbacks)
-                .internalToolExecutionEnabled(false)
-                .build();
+        ToolCallingChatOptions.Builder builder = ToolCallingChatOptions.builder()
+                .toolCallbacks(toolCallbacks);
+        disableInternalToolExecutionIfSupported(builder);
+        ToolCallingChatOptions options = builder.build();
         return new Prompt(toMessages(request), options);
+    }
+
+    private void disableInternalToolExecutionIfSupported(ToolCallingChatOptions.Builder builder) {
+        try {
+            Method method = builder.getClass().getMethod("internalToolExecutionEnabled", Boolean.class);
+            method.invoke(builder, Boolean.FALSE);
+        } catch (NoSuchMethodException ex) {
+            // Spring AI 2.0 RC removed this option; AgentHub still executes returned tool calls itself.
+        } catch (IllegalAccessException ex) {
+            throw new IllegalStateException("Failed to configure Spring AI tool execution", ex);
+        } catch (InvocationTargetException ex) {
+            Throwable cause = ex.getCause() == null ? ex : ex.getCause();
+            throw new IllegalStateException("Failed to configure Spring AI tool execution", cause);
+        }
     }
 
     private List<Message> toMessages(ModelRequest request) {

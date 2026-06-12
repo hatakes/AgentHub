@@ -2,7 +2,7 @@
 
 AgentHub is a reusable Agent capability platform prototype.
 
-It focuses on the business Agent abstraction layer: Tool registration, permission, audit, memory, runtime orchestration, and Spring Boot integration. Model invocation can be provided by HTTP-compatible adapters today, with optional Java 17 adapter spikes for Spring AI and LangChain4j.
+It focuses on the business Agent abstraction layer: Tool registration, permission, audit, memory, runtime orchestration, and Spring Boot integration. Model invocation can be provided by HTTP-compatible adapters today, with Java 17+ adapter spikes for Spring AI and LangChain4j.
 
 Current scope:
 
@@ -13,8 +13,9 @@ agent-model-provider-http
 agent-mcp-adapter
 agent-spring-boot-starter
 agent-example-spring-boot2
-agent-model-provider-langchain4j  optional Java 17 profile
-agent-model-provider-spring-ai    optional Java 17 profile
+agent-attachment-analysis-demo
+agent-model-provider-langchain4j  Java 17+ adapter profile
+agent-model-provider-spring-ai    Java 17+ adapter profile
 ```
 
 ## Modules
@@ -26,8 +27,9 @@ agent-model-provider-http  OpenAI / Anthropic 兼容 HTTP 模型协议适配
 agent-mcp-adapter          AgentTool 到 MCP Tool 的最小映射适配
 agent-spring-boot-starter  Spring Boot 2 业务系统接入层
 agent-example-spring-boot2 Spring Boot 2 示例应用
-agent-model-provider-langchain4j LangChain4j ModelProvider Spike，Java 17 profile
-agent-model-provider-spring-ai   Spring AI ModelProvider Spike，Java 17 profile
+agent-attachment-analysis-demo 智能附件分析业务样板，验证上传、解析、分类、规则校验和审核意见链路
+agent-model-provider-langchain4j LangChain4j ModelProvider Spike，JDK 17+ 自动激活
+agent-model-provider-spring-ai   Spring AI ModelProvider Spike，JDK 17+ 自动激活
 ```
 
 Module docs:
@@ -39,6 +41,7 @@ agent-model-provider-http/README.md
 agent-mcp-adapter/README.md
 agent-spring-boot-starter/README.md
 agent-example-spring-boot2/README.md
+agent-attachment-analysis-demo/README.md
 agent-model-provider-langchain4j/README.md
 agent-model-provider-spring-ai/README.md
 ```
@@ -58,33 +61,60 @@ agent-model-provider-http  protocol adapter tests with mock HTTP server
 agent-mcp-adapter          MCP Tool mapping and tools/call tests
 agent-spring-boot-starter  auto-configuration tests
 agent-example-spring-boot2 integration test
+agent-attachment-analysis-demo upload and attachment analysis integration tests
 ```
 
-Current result:
+MVP Java 8 reactor result:
 
 ```text
-Tests run: 65, Failures: 0, Errors: 0, Skipped: 0
+Tests run: 68, Failures: 0, Errors: 0, Skipped: 0
 ```
 
-Optional Java 17 adapter Spike:
+The `adapters-java17` profile is activated automatically on JDK 17+. It adds `agent-model-provider-langchain4j` and `agent-model-provider-spring-ai`, so IDEs importing the project with JDK 17+ should recognize them as Maven modules.
+
+Java 17+ reactor result:
 
 ```bash
-mvn -Padapters-java17 test
+mvn test
 ```
-
-Current adapter profile result:
 
 ```text
-Tests run: 73, Failures: 0, Errors: 0, Skipped: 0
+Tests run: 79, Failures: 0, Errors: 0, Skipped: 0
 ```
 
-The Java 17 profile adds `agent-model-provider-langchain4j` and `agent-model-provider-spring-ai`. These modules currently cover `TEXT_CHAT`, `TEXT_STREAM`, Tool schema request mapping, and inbound ToolCall response mapping. Full `TOOL_CALL` capability declaration, tool-result messages, and structured output remain follow-up work.
+To force the MVP-only reactor on JDK 17+, disable the profile explicitly:
+
+```bash
+mvn '-P!adapters-java17' test
+```
+
+The Java 17 adapter modules currently cover `TEXT_CHAT`, `TEXT_STREAM`, Tool schema request mapping, and inbound ToolCall response mapping. Full `TOOL_CALL` capability declaration, tool-result messages, and structured output remain follow-up work.
 
 ## Run Example
 
 ```bash
 mvn install -DskipTests
 mvn -pl agent-example-spring-boot2 spring-boot:run
+```
+
+## Run Attachment Analysis Demo
+
+```bash
+mvn -pl agent-attachment-analysis-demo spring-boot:run
+```
+
+Upload a text attachment:
+
+```bash
+curl -F 'file=@id-card.txt;type=text/plain' http://127.0.0.1:8080/attachments
+```
+
+Analyze the returned `attachmentId`:
+
+```bash
+curl -sS -X POST http://127.0.0.1:8080/agent/chat \
+  -H 'Content-Type: application/json' \
+  -d '{"sessionId":"att-001","userId":"attachment-reviewer","message":"请分析附件 att-xxx"}'
 ```
 
 ## Minimal Business Demo

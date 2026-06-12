@@ -33,25 +33,31 @@ mvn test 无失败
 mvn install -DskipTests 可完成多模块安装
 ```
 
-当前文档基线结果：
+MVP Java 8 reactor 文档基线结果：
 
 ```text
 Tests run: 65, Failures: 0, Errors: 0, Skipped: 0
 ```
 
-可选 Java 17 adapter Spike 验证：
+说明：`adapters-java17` profile 在 JDK 17+ 自动激活，用于让 Spring AI / LangChain4j adapter Spike 在 IDE 和 Maven reactor 中被识别。JDK 17+ 下默认 `mvn test` 会包含这两个模块。
+
+JDK 17+ reactor 验证：
 
 ```bash
-mvn -Padapters-java17 test
+mvn test
 ```
-
-当前 adapter profile 结果：
 
 ```text
-Tests run: 73, Failures: 0, Errors: 0, Skipped: 0
+Tests run: 79, Failures: 0, Errors: 0, Skipped: 0
 ```
 
-说明：`adapters-java17` 只用于验证 Spring AI / LangChain4j 的 `TEXT_CHAT` / `TEXT_STREAM`、Tool schema 下发和 ToolCall 响应映射最小适配，不作为第一版 MVP 通过门槛。
+如需在 JDK 17+ 下只验证第一版 MVP 主链路，可显式禁用 profile：
+
+```bash
+mvn '-P!adapters-java17' test
+```
+
+`adapters-java17` 只用于验证 Spring AI / LangChain4j 的 `TEXT_CHAT` / `TEXT_STREAM`、Tool schema 下发和 ToolCall 响应映射最小适配，不作为第一版 MVP 通过门槛。
 
 ## 3. 示例应用启动
 

@@ -16,6 +16,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Arrays;
 import java.util.Collections;
+import java.lang.reflect.Method;
 import org.springframework.ai.model.tool.ToolCallingChatOptions;
 import org.junit.Assert;
 import org.junit.Test;
@@ -106,13 +107,24 @@ public class SpringAiModelProviderTest {
         Assert.assertEquals("spring ai answer", response.getAnswer());
         Assert.assertTrue(chatModel.prompt.getOptions() instanceof ToolCallingChatOptions);
         ToolCallingChatOptions options = (ToolCallingChatOptions) chatModel.prompt.getOptions();
-        Assert.assertEquals(Boolean.FALSE, options.getInternalToolExecutionEnabled());
+        assertInternalToolExecutionDisabledWhenSupported(options);
         Assert.assertEquals(1, options.getToolCallbacks().size());
         Assert.assertEquals("query_order_status", options.getToolCallbacks().get(0).getToolDefinition().name());
         Assert.assertEquals("查询订单状态", options.getToolCallbacks().get(0).getToolDefinition().description());
         Assert.assertTrue(options.getToolCallbacks().get(0).getToolDefinition().inputSchema().contains("\"orderNo\""));
         Assert.assertTrue(options.getToolCallbacks().get(0).getToolDefinition().inputSchema().contains("\"required\":[\"orderNo\"]"));
         Assert.assertFalse(provider.capabilities().contains(ModelProviderCapability.TOOL_CALL));
+    }
+
+    private void assertInternalToolExecutionDisabledWhenSupported(ToolCallingChatOptions options) {
+        try {
+            Method method = options.getClass().getMethod("getInternalToolExecutionEnabled");
+            Assert.assertEquals(Boolean.FALSE, method.invoke(options));
+        } catch (NoSuchMethodException ex) {
+            // Spring AI 2.0 RC removed this option.
+        } catch (Exception ex) {
+            throw new AssertionError("Failed to inspect internal tool execution option", ex);
+        }
     }
 
     private static class RecordingChatModel implements org.springframework.ai.chat.model.ChatModel {
