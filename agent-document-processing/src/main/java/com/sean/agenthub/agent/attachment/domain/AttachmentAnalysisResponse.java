@@ -1,6 +1,5 @@
-package com.sean.agenthub.agent.attachment.api;
+package com.sean.agenthub.agent.attachment.domain;
 
-import com.sean.agenthub.agent.attachment.domain.AttachmentAnalysisResult;
 import com.sean.agenthub.agent.core.model.ToolCallResult;
 import java.util.ArrayList;
 import java.util.List;

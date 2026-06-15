@@ -47,6 +47,28 @@ PermissionEngine   Tool 调用权限检查接口
 AuditService       审计记录接口
 ```
 
+## 核心代码阅读入口
+
+建议先读这些类型的类注释和关键方法注释：
+
+```text
+api/ModelProvider.java       为什么 core 通过接口隔离模型厂商和 AI 框架
+api/AgentTool.java           为什么业务能力必须注册成受控 Tool
+api/AgentRuntime.java        Runtime 只负责编排，不承载具体业务规则
+api/PermissionEngine.java    为什么权限检查统一放在 Tool 执行前
+api/AuditService.java        为什么 Tool 调用必须统一审计
+runtime/DefaultAgentRuntime.java  模型决策、Tool 执行、权限审计、模型总结的主链路
+```
+
+阅读顺序：
+
+```text
+ModelProvider / AgentTool 抽象边界
+-> DefaultAgentRuntime.run 非流式主链路
+-> DefaultAgentRuntime.executeTool 安全执行边界
+-> DefaultAgentRuntime.runStream 流式链路
+```
+
 ## 当前默认实现
 
 ```text
@@ -91,5 +113,7 @@ DefaultAgentRuntime 权限拒绝时不执行 Tool
 不直接依赖具体模型厂商 SDK
 MVP 阶段只允许 READ Tool
 ```
+
+这些约束也体现在代码注释里：core 只定义抽象和执行顺序，具体模型、数据库、业务 Tool、权限体系和审计落库都通过接口实现接入。
 
 后续扩展 PostgreSQL、Redis、真实模型供应商、MCP 或 Gateway 时，应通过接口新增实现，不应让 `agent-core` 反向依赖上层模块。

@@ -1,4 +1,4 @@
-package com.sean.agenthub.agent.attachment.api;
+package com.sean.agenthub.agent.attachment.domain;
 
 /**
  * 分析已有附件的请求。

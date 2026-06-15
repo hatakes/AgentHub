@@ -1,6 +1,6 @@
 package com.sean.agenthub.agent.attachment.application;
 
-import com.sean.agenthub.agent.attachment.api.AttachmentAnalysisResponse;
+import com.sean.agenthub.agent.attachment.domain.AttachmentAnalysisResponse;
 import com.sean.agenthub.agent.attachment.domain.AttachmentRecord;
 import com.sean.agenthub.agent.attachment.domain.ParsedAttachmentContent;
 import com.sean.agenthub.agent.attachment.infrastructure.AttachmentRepository;

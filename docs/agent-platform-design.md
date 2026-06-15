@@ -268,15 +268,18 @@ SummaryTool                   生成附件分析摘要和审核意见
 com.sean.agenthub.agent.attachment
 ├─ AttachmentAnalysisApplication
 ├─ api
-│  └─ AttachmentUploadController
+│  ├─ AttachmentUploadController
+│  └─ AttachmentAnalysisController
 ├─ application
 │  ├─ AttachmentAnalysisModelProvider
-│  └─ AttachmentAnalysisService
+│  ├─ AttachmentAnalysisService
+│  └─ DocumentOutlineService
 ├─ domain
 │  ├─ AttachmentRecord
 │  ├─ AttachmentAnalysisResult
-│  ├─ DocumentType
-│  └─ RuleCheckResult
+│  ├─ AnalyzeAttachmentRequest
+│  ├─ AttachmentAnalysisResponse
+│  └─ DocumentOutlineResponse
 ├─ infrastructure
 │  ├─ AttachmentRepository
 │  ├─ AttachmentAuditService
@@ -295,9 +298,9 @@ com.sean.agenthub.agent.attachment
 分层原则：
 
 ```text
-api 只放 HTTP 入口和请求响应 DTO
-application 编排附件分析用例和样板模型决策
-domain 放附件、文档类型、抽取字段、规则结果等业务模型
+api 只放 HTTP 入口
+application 编排附件分析、大纲提炼用例和样板模型决策
+domain 放附件记录、解析结果、业务分析结果、请求和响应 DTO 等业务模型
 infrastructure 放内存仓库、权限、审计、后续 OCR / 文件解析 adapter
 tool 只放 AgentTool 适配层，Tool 内部尽量调用 application / domain 能力
 support 只放当前样板临时工具类，稳定后应下沉到明确的 domain 或 infrastructure 类型

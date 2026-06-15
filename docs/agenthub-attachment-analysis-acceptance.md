@@ -31,6 +31,7 @@ AgentHub 版本：0.1.0-SNAPSHOT
 附件上传、OCR、文件解析、文档分类、字段抽取、规则校验和审核意见生成属于业务样板模块
 agent-core 不内置附件、OCR、PDF、Word、身份证或材料审核领域能力
 确定性规则由业务代码执行，模型或 mock provider 只负责触发 Tool 和总结结果
+api 层只保留 HTTP 入口，请求和响应 DTO 归入 domain，避免 Controller 包承载业务模型
 ```
 
 ## 3. 业务接口
@@ -298,7 +299,7 @@ errorMessage 不包含完整堆栈和敏感配置：无权限错误为 Only atta
 模型误触发风险：样板 AttachmentAnalysisModelProvider 是规则型 mock，不能代表真实模型误触发概率。
 业务接口稳定性风险：默认 profile 不访问真实 OCR、Word 或存储服务，未覆盖超时和下游异常。
 审计落库或日志平台风险：样板使用内存 List，生产系统需接数据库、日志平台或审计系统。
-错误响应风险：不存在 attachmentId、不支持文件类型、空文件等结构化错误尚未补齐。
+错误响应风险：不存在 attachmentId、不支持文件类型、空文件等结构化错误已覆盖，后续仍需统一生产级错误码和 traceId。
 MiMo 真实模型风险：mimo profile 已有图片解析和文档大纲入口，但本验收未执行真实外部模型调用。
 PDF 解析风险：当前仅覆盖文本型 PDF，扫描件 PDF 仍需 OCR adapter。
 ```
@@ -318,8 +319,8 @@ PDF 解析风险：当前仅覆盖文本型 PDF，扫描件 PDF 仍需 OCR adapt
 下一步：
 
 ```text
-1. 补齐不存在 attachmentId、不支持文件类型、空文件 / 空解析结果的结构化错误。
-2. 将年龄判断、审核通过 / 驳回等确定性规则从 AttachmentToolSupport 逐步拆到 domain/service。
-3. 按 AttachmentContentParser 扩展 PDF、Word 或企业 OCR adapter，继续保持 agent-core 不感知附件领域。
-4. 如需验收真实图片识别，单独启用 mimo profile 并记录外部模型调用结果。
+1. 将年龄判断、审核通过 / 驳回等确定性规则从 AttachmentToolSupport 逐步拆到 domain/service。
+2. 按 AttachmentContentParser 扩展 Word、扫描件 PDF 或企业 OCR adapter，继续保持 agent-core 不感知附件领域。
+3. 如需验收真实图片识别，单独启用 mimo profile 并记录外部模型调用结果。
+4. 生产接入前补统一错误码、traceId 和审计 requestSummary 断言。
 ```

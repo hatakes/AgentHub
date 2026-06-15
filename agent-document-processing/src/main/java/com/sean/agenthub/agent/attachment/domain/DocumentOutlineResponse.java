@@ -1,6 +1,4 @@
-package com.sean.agenthub.agent.attachment.api;
-
-import com.sean.agenthub.agent.attachment.domain.DocumentOutlineResult;
+package com.sean.agenthub.agent.attachment.domain;
 
 /**
  * 文档大纲提炼接口响应。

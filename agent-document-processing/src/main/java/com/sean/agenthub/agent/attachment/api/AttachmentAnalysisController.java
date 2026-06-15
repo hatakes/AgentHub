@@ -2,6 +2,9 @@ package com.sean.agenthub.agent.attachment.api;
 
 import com.sean.agenthub.agent.attachment.application.AttachmentAnalysisService;
 import com.sean.agenthub.agent.attachment.application.DocumentOutlineService;
+import com.sean.agenthub.agent.attachment.domain.AnalyzeAttachmentRequest;
+import com.sean.agenthub.agent.attachment.domain.AttachmentAnalysisResponse;
+import com.sean.agenthub.agent.attachment.domain.DocumentOutlineResponse;
 import com.sean.agenthub.agent.attachment.domain.ParsedAttachmentContent;
 import com.sean.agenthub.agent.attachment.infrastructure.parser.AttachmentContentParserRegistry;
 import java.io.IOException;

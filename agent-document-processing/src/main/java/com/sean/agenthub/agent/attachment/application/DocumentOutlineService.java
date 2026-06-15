@@ -3,7 +3,7 @@ package com.sean.agenthub.agent.attachment.application;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.sean.agenthub.agent.attachment.api.DocumentOutlineResponse;
+import com.sean.agenthub.agent.attachment.domain.DocumentOutlineResponse;
 import com.sean.agenthub.agent.attachment.domain.AttachmentRecord;
 import com.sean.agenthub.agent.attachment.domain.DocumentOutlineResult;
 import com.sean.agenthub.agent.attachment.domain.ParsedAttachmentContent;

@@ -17,7 +17,7 @@ PDF / Markdown 支持独立的大纲和重点提炼接口
 ```text
 api              HTTP 入口
 application      附件分析用例编排和 mock model provider
-domain           附件、文档类型、抽取字段、规则结果
+domain           附件记录、解析结果、业务分析结果、请求和响应 DTO
 infrastructure   内存仓库、权限、审计、OCR / 文件解析 adapter
 tool             AgentTool 适配层
 support          临时辅助类
