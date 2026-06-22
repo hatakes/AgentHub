@@ -1,4 +1,4 @@
-package com.sean.agenthub.agent.provider.http;
+package com.sean.agenthub.agent.provider.http.protocol;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -18,50 +18,67 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.sean.agenthub.agent.provider.http.ModelProviderJsonFields.ARGUMENTS;
-import static com.sean.agenthub.agent.provider.http.ModelProviderJsonFields.ASSISTANT;
-import static com.sean.agenthub.agent.provider.http.ModelProviderJsonFields.CALL_ID_PREFIX;
-import static com.sean.agenthub.agent.provider.http.ModelProviderJsonFields.CONTENT;
-import static com.sean.agenthub.agent.provider.http.ModelProviderJsonFields.DESCRIPTION;
-import static com.sean.agenthub.agent.provider.http.ModelProviderJsonFields.ENUM;
-import static com.sean.agenthub.agent.provider.http.ModelProviderJsonFields.FUNCTION;
-import static com.sean.agenthub.agent.provider.http.ModelProviderJsonFields.ID;
-import static com.sean.agenthub.agent.provider.http.ModelProviderJsonFields.INPUT;
-import static com.sean.agenthub.agent.provider.http.ModelProviderJsonFields.INPUT_SCHEMA;
-import static com.sean.agenthub.agent.provider.http.ModelProviderJsonFields.JSON_SCHEMA;
-import static com.sean.agenthub.agent.provider.http.ModelProviderJsonFields.NAME;
-import static com.sean.agenthub.agent.provider.http.ModelProviderJsonFields.OBJECT;
-import static com.sean.agenthub.agent.provider.http.ModelProviderJsonFields.PARAMETERS;
-import static com.sean.agenthub.agent.provider.http.ModelProviderJsonFields.PROPERTIES;
-import static com.sean.agenthub.agent.provider.http.ModelProviderJsonFields.REQUIRED;
-import static com.sean.agenthub.agent.provider.http.ModelProviderJsonFields.ROLE;
-import static com.sean.agenthub.agent.provider.http.ModelProviderJsonFields.SCHEMA;
-import static com.sean.agenthub.agent.provider.http.ModelProviderJsonFields.STRICT;
-import static com.sean.agenthub.agent.provider.http.ModelProviderJsonFields.SYSTEM;
-import static com.sean.agenthub.agent.provider.http.ModelProviderJsonFields.TOOL;
-import static com.sean.agenthub.agent.provider.http.ModelProviderJsonFields.TOOL_CALL_ID;
-import static com.sean.agenthub.agent.provider.http.ModelProviderJsonFields.TOOL_CALLS;
-import static com.sean.agenthub.agent.provider.http.ModelProviderJsonFields.TOOL_RESULT;
-import static com.sean.agenthub.agent.provider.http.ModelProviderJsonFields.TOOL_USE;
-import static com.sean.agenthub.agent.provider.http.ModelProviderJsonFields.TOOL_USE_ID;
-import static com.sean.agenthub.agent.provider.http.ModelProviderJsonFields.TYPE;
-import static com.sean.agenthub.agent.provider.http.ModelProviderJsonFields.USER;
+import static com.sean.agenthub.agent.provider.http.protocol.ModelProviderJsonFields.ARGUMENTS;
+import static com.sean.agenthub.agent.provider.http.protocol.ModelProviderJsonFields.ASSISTANT;
+import static com.sean.agenthub.agent.provider.http.protocol.ModelProviderJsonFields.CALL_ID_PREFIX;
+import static com.sean.agenthub.agent.provider.http.protocol.ModelProviderJsonFields.CONTENT;
+import static com.sean.agenthub.agent.provider.http.protocol.ModelProviderJsonFields.DESCRIPTION;
+import static com.sean.agenthub.agent.provider.http.protocol.ModelProviderJsonFields.ENUM;
+import static com.sean.agenthub.agent.provider.http.protocol.ModelProviderJsonFields.FUNCTION;
+import static com.sean.agenthub.agent.provider.http.protocol.ModelProviderJsonFields.ID;
+import static com.sean.agenthub.agent.provider.http.protocol.ModelProviderJsonFields.INPUT;
+import static com.sean.agenthub.agent.provider.http.protocol.ModelProviderJsonFields.INPUT_SCHEMA;
+import static com.sean.agenthub.agent.provider.http.protocol.ModelProviderJsonFields.JSON_SCHEMA;
+import static com.sean.agenthub.agent.provider.http.protocol.ModelProviderJsonFields.NAME;
+import static com.sean.agenthub.agent.provider.http.protocol.ModelProviderJsonFields.OBJECT;
+import static com.sean.agenthub.agent.provider.http.protocol.ModelProviderJsonFields.PARAMETERS;
+import static com.sean.agenthub.agent.provider.http.protocol.ModelProviderJsonFields.PROPERTIES;
+import static com.sean.agenthub.agent.provider.http.protocol.ModelProviderJsonFields.REQUIRED;
+import static com.sean.agenthub.agent.provider.http.protocol.ModelProviderJsonFields.ROLE;
+import static com.sean.agenthub.agent.provider.http.protocol.ModelProviderJsonFields.SCHEMA;
+import static com.sean.agenthub.agent.provider.http.protocol.ModelProviderJsonFields.STRICT;
+import static com.sean.agenthub.agent.provider.http.protocol.ModelProviderJsonFields.SYSTEM;
+import static com.sean.agenthub.agent.provider.http.protocol.ModelProviderJsonFields.TOOL;
+import static com.sean.agenthub.agent.provider.http.protocol.ModelProviderJsonFields.TOOL_CALL_ID;
+import static com.sean.agenthub.agent.provider.http.protocol.ModelProviderJsonFields.TOOL_CALLS;
+import static com.sean.agenthub.agent.provider.http.protocol.ModelProviderJsonFields.TOOL_RESULT;
+import static com.sean.agenthub.agent.provider.http.protocol.ModelProviderJsonFields.TOOL_USE;
+import static com.sean.agenthub.agent.provider.http.protocol.ModelProviderJsonFields.TOOL_USE_ID;
+import static com.sean.agenthub.agent.provider.http.protocol.ModelProviderJsonFields.TYPE;
+import static com.sean.agenthub.agent.provider.http.protocol.ModelProviderJsonFields.USER;
 
 /**
  * 模型协议 JSON 转换辅助方法。
  *
  * <p>包内实现细节，封装 OpenAI / Anthropic 协议载荷转换；不作为模块公开 API 暴露。</p>
  *
+ * <p>这里的核心目标是保持 agent-core 模型对象稳定。OpenAI、Anthropic 对 system message、Tool 定义、
+ * Tool 结果回填的 JSON 结构都不一样，但这些差异不应泄漏到 Runtime 或业务 Tool 里。</p>
+ *
  * @author Sean
  */
-class ModelProviderJsonSupport {
+public class ModelProviderJsonSupport {
     private final ObjectMapper objectMapper;
 
-    ModelProviderJsonSupport(ObjectMapper objectMapper) {
+    public ModelProviderJsonSupport(ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
     }
 
-    List<Map<String, Object>> toOpenAiMessages(ModelRequest request) {
+    /**
+     * 把 ModelRequest 转换成 OpenAI messages 数组。
+     *
+     * <p>转换逻辑：
+     * <ul>
+     *   <li>system prompt 作为 system role 消息放在最前面</li>
+     *   <li>历史消息按原样转换，role 保持不变</li>
+     *   <li>如果历史消息中没有 user 消息，追加当前 userMessage</li>
+     *   <li>如果有 Tool 执行结果，追加 assistant tool_calls 消息和 tool 角色结果消息</li>
+     * </ul>
+     *
+     * @param request 模型请求
+     * @return OpenAI messages 数组
+     */
+    public List<Map<String, Object>> toOpenAiMessages(ModelRequest request) {
         List<Map<String, Object>> payload = new ArrayList<Map<String, Object>>();
         if (request.getSystemPrompt() != null && !request.getSystemPrompt().isEmpty()) {
             Map<String, Object> item = new LinkedHashMap<String, Object>();
@@ -92,7 +109,20 @@ class ModelProviderJsonSupport {
         return payload;
     }
 
-    List<Map<String, Object>> toAnthropicMessages(ModelRequest request) {
+    /**
+     * 把 ModelRequest 转换成 Anthropic messages 数组。
+     *
+     * <p>与 OpenAI 不同，Anthropic 的消息结构：
+     * <ul>
+     *   <li>system prompt 是顶层字段，不在 messages 里</li>
+     *   <li>role 只有 user 和 assistant 两种</li>
+     *   <li>Tool 结果作为 user 侧的 tool_result content block</li>
+     * </ul>
+     *
+     * @param request 模型请求
+     * @return Anthropic messages 数组
+     */
+    public List<Map<String, Object>> toAnthropicMessages(ModelRequest request) {
         List<Map<String, Object>> payload = new ArrayList<Map<String, Object>>();
         for (AgentMessage message : request.getMessages()) {
             Map<String, Object> item = new LinkedHashMap<String, Object>();
@@ -110,7 +140,25 @@ class ModelProviderJsonSupport {
         return payload;
     }
 
-    List<Map<String, Object>> toOpenAiTools(List<AgentTool> tools) {
+    /**
+     * 把 AgentTool 列表转换成 OpenAI tools 数组。
+     *
+     * <p>OpenAI 的 Tool 定义格式：
+     * <pre>
+     * {
+     *   "type": "function",
+     *   "function": {
+     *     "name": "tool_name",
+     *     "description": "tool description",
+     *     "parameters": { ... }
+     *   }
+     * }
+     * </pre>
+     *
+     * @param tools AgentTool 列表
+     * @return OpenAI tools 数组
+     */
+    public List<Map<String, Object>> toOpenAiTools(List<AgentTool> tools) {
         List<Map<String, Object>> payload = new ArrayList<Map<String, Object>>();
         for (AgentTool tool : tools) {
             Map<String, Object> function = new LinkedHashMap<String, Object>();
@@ -126,7 +174,22 @@ class ModelProviderJsonSupport {
         return payload;
     }
 
-    List<Map<String, Object>> toAnthropicTools(List<AgentTool> tools) {
+    /**
+     * 把 AgentTool 列表转换成 Anthropic tools 数组。
+     *
+     * <p>与 OpenAI 不同，Anthropic 的 Tool 定义格式：
+     * <pre>
+     * {
+     *   "name": "tool_name",
+     *   "description": "tool description",
+     *   "input_schema": { ... }
+     * }
+     * </pre>
+     *
+     * @param tools AgentTool 列表
+     * @return Anthropic tools 数组
+     */
+    public List<Map<String, Object>> toAnthropicTools(List<AgentTool> tools) {
         List<Map<String, Object>> payload = new ArrayList<Map<String, Object>>();
         for (AgentTool tool : tools) {
             Map<String, Object> item = new LinkedHashMap<String, Object>();
@@ -138,7 +201,7 @@ class ModelProviderJsonSupport {
         return payload;
     }
 
-    Map<String, Object> toOpenAiResponseFormat(ResponseFormat responseFormat) {
+    public Map<String, Object> toOpenAiResponseFormat(ResponseFormat responseFormat) {
         Map<String, Object> result = new LinkedHashMap<String, Object>();
         result.put(TYPE, responseFormat.getType());
 
@@ -152,7 +215,16 @@ class ModelProviderJsonSupport {
         return result;
     }
 
-    Map<String, Object> parseArguments(String argumentsJson) {
+    /**
+     * 解析 Tool 参数 JSON 字符串。
+     *
+     * <p>OpenAI 的 arguments 是 JSON 字符串，需要解析成 Map。
+     * 如果解析失败，返回空 Map，让后续的必填参数校验捕获错误。</p>
+     *
+     * @param argumentsJson JSON 字符串
+     * @return 参数 Map
+     */
+    public Map<String, Object> parseArguments(String argumentsJson) {
         if (argumentsJson == null || argumentsJson.trim().isEmpty()) {
             return new LinkedHashMap<String, Object>();
         }
@@ -167,7 +239,7 @@ class ModelProviderJsonSupport {
         }
     }
 
-    JsonNode parseJson(String json) {
+    public JsonNode parseJson(String json) {
         try {
             return objectMapper.readTree(json);
         } catch (IOException ex) {
@@ -175,7 +247,7 @@ class ModelProviderJsonSupport {
         }
     }
 
-    Map<String, Object> toMap(JsonNode node) {
+    public Map<String, Object> toMap(JsonNode node) {
         if (node == null || !node.isObject()) {
             return new LinkedHashMap<String, Object>();
         }
@@ -190,12 +262,23 @@ class ModelProviderJsonSupport {
         return USER;
     }
 
+    /**
+     * 追加 OpenAI 格式的 Tool 结果消息。
+     *
+     * <p>OpenAI 要求先补一条 assistant tool_calls 消息，再补每个 tool 角色的结果消息。
+     * 这等价于告诉模型："这些 ToolCall 是你刚才要求的，下面是 Runtime 执行后的结果"。</p>
+     *
+     * @param payload 消息列表
+     * @param request 模型请求
+     */
     private void appendOpenAiToolMessages(List<Map<String, Object>> payload, ModelRequest request) {
         List<ToolExecutionResult> executions = normalizedToolExecutions(request);
         if (executions.isEmpty()) {
             return;
         }
 
+        // OpenAI 要求先补一条 assistant tool_calls 消息，再补每个 tool 角色的结果消息。
+        // 这等价于告诉模型：“这些 ToolCall 是你刚才要求的，下面是 Runtime 执行后的结果”。
         Map<String, Object> assistant = new LinkedHashMap<String, Object>();
         assistant.put(ROLE, ASSISTANT);
         assistant.put(CONTENT, null);
@@ -225,12 +308,23 @@ class ModelProviderJsonSupport {
         }
     }
 
+    /**
+     * 追加 Anthropic 格式的 Tool 结果消息。
+     *
+     * <p>与 OpenAI 不同，Anthropic 的 Tool 回填由一条 assistant tool_use 和一条 user tool_result 组成。
+     * 它把 Tool 结果视作用户侧提供的新 content block。</p>
+     *
+     * @param payload 消息列表
+     * @param request 模型请求
+     */
     private void appendAnthropicToolMessages(List<Map<String, Object>> payload, ModelRequest request) {
         List<ToolExecutionResult> executions = normalizedToolExecutions(request);
         if (executions.isEmpty()) {
             return;
         }
 
+        // Anthropic 的 Tool 回填由一条 assistant tool_use 和一条 user tool_result 组成。
+        // 与 OpenAI 不同，它把 Tool 结果视作用户侧提供的新 content block。
         List<Map<String, Object>> toolUseContent = new ArrayList<Map<String, Object>>();
         List<Map<String, Object>> toolResultContent = new ArrayList<Map<String, Object>>();
         for (int i = 0; i < executions.size(); i++) {
@@ -262,10 +356,23 @@ class ModelProviderJsonSupport {
         payload.add(user);
     }
 
+    /**
+     * 标准化 Tool 执行结果列表。
+     *
+     * <p>兼容两种输入格式：
+     * <ul>
+     *   <li>lastToolExecutions：新的多 Tool 执行结果列表</li>
+     *   <li>lastToolCall + lastToolResult：旧的单 Tool 兼容字段</li>
+     * </ul>
+     *
+     * @param request 模型请求
+     * @return 标准化后的 Tool 执行结果列表
+     */
     private List<ToolExecutionResult> normalizedToolExecutions(ModelRequest request) {
         if (request.getLastToolExecutions() != null && !request.getLastToolExecutions().isEmpty()) {
             return request.getLastToolExecutions();
         }
+        // 兼容早期只支持单 Tool 的字段，避免 provider 升级后破坏旧测试和旧调用方。
         List<ToolExecutionResult> executions = new ArrayList<ToolExecutionResult>();
         if (request.getLastToolCall() != null && request.getLastToolResult() != null) {
             executions.add(new ToolExecutionResult(request.getLastToolCall(), request.getLastToolResult()));

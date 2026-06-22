@@ -25,6 +25,10 @@
 2026-06-15 已新增核心代码跳转入口 `docs/AgentHub_核心代码导航.md`，按 `/agent/chat` 主链路、模型适配、Tool 扩展、权限审计、附件业务样板和测试入口整理关键类。
 2026-06-15 已新增第一周可执行日计划 `docs/plans/AgentHub_第一周日计划.md` 和对应 xlsx，拆分每日任务、AI 可辅助事项、必须自己掌握事项和第二周候选方向。
 2026-06-15 已补强 `agent-core` 核心代码设计注释，重点覆盖 `ModelProvider`、`AgentTool`、`AgentRuntime`、`PermissionEngine`、`AuditService`、`AgentMemory`、`ToolRegistry` 和 `DefaultAgentRuntime` 的设计边界与执行链路。
+2026-06-21 已补充 AgentRuntime “接口 + 默认实现 + 可选包装器”设计说明，并新增 `DelegatingAgentRuntime` 包装器基类，明确业务增强优先使用 decorator，核心流程变化再自定义完整 AgentRuntime。
+2026-06-21 已将 `agent-model-provider-http` 内部实现拆为 `protocol` / `transport` 子包，隔离模型协议 JSON 转换和 JDK HTTP / SSE 传输辅助逻辑。
+2026-06-21 已更新设计文档中的当前缺口和推进顺序，明确下一阶段重点是生产业务接入反馈、真实附件解析、持久化样板、可观测性和治理闭环。
+2026-06-21 已执行局部回归：`mvn -pl agent-core,agent-model-provider-http,agent-spring-boot-starter,agent-document-processing test` 通过。
 
 已确认：
 
@@ -70,6 +74,7 @@ MCP 保留为生态互通协议方向，后续优先评估 MCP Java SDK / Spring
 已有 agent-example-spring-boot2 集成测试
 已有 agent-document-processing 智能附件分析业务样板和集成测试
 已有 agent-document-processing PDF / Markdown 大纲提炼入口和接口 DTO 分层整理
+已有 agent-model-provider-http protocol / transport 内部包结构和 HTTP 请求辅助方法测试
 已有 docs/agenthub-attachment-analysis-acceptance.md 智能附件分析业务样板验收记录
 已有 docs/AgentHub_学习与落地计划.md 项目上手总入口
 已有 docs/AgentHub_核心代码导航.md 核心类和核心文档跳转入口
@@ -179,6 +184,8 @@ MCP 保留为生态互通协议方向，后续优先评估 MCP Java SDK / Spring
 完成 agent-document-processing 文件解析层抽象：text parser 和 image mock parser
 完成 agent-document-processing 业务接入验收记录：docs/agenthub-attachment-analysis-acceptance.md
 完成 agent-document-processing 错误场景验收：不支持文件类型、空解析结果、不存在 attachmentId
+完成 AgentRuntime 扩展模式说明：接口 + 默认实现 + DelegatingAgentRuntime 可选包装器
+完成 agent-model-provider-http 内部 protocol / transport 拆包和局部回归测试
 ```
 
 当前 agent-core 包结构：

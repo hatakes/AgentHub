@@ -341,7 +341,6 @@ public class AttachmentAnalysisApplicationTest {
         Assert.assertTrue(auditService.getEvents().isEmpty());
     }
 
-    @SuppressWarnings("unchecked")
     private String uploadTextAttachment(String filename, String text) {
         MultiValueMap<String, Object> body = new LinkedMultiValueMap<String, Object>();
         body.add("file", filePart(filename, text));

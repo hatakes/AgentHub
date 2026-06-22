@@ -34,6 +34,10 @@ OpenAI-compatible 和 Anthropic-compatible 适配器会通过 `ModelProviderCapa
 HttpModelProviderProperties      HTTP 模型公共配置
 OpenAiCompatibleModelProvider    OpenAI-compatible 协议适配
 AnthropicCompatibleModelProvider Anthropic-compatible 协议适配
+protocol.ModelProviderJsonSupport 模型协议 JSON 转换
+protocol.ModelProviderJsonFields  模型协议字段和值常量
+transport.HttpJsonClient          JDK HttpURLConnection JSON 客户端
+transport.HttpRequestSupport      HTTP / SSE 请求响应辅助方法
 ```
 
 ## 设计约束
@@ -47,15 +51,16 @@ AnthropicCompatibleModelProvider Anthropic-compatible 协议适配
 
 ## 包结构决策
 
-当前 `com.sean.agenthub.agent.provider.http` 暂不继续拆子包，也不只拆目录。
+当前已从单一 `com.sean.agenthub.agent.provider.http` 拆出内部 `protocol` / `transport` 子包。
 
 原因：
 
 ```text
 Java 源码目录应与 package 保持一致，不采用目录分层和 package 不一致的结构
-当前模块只有少量类，扁平 package 仍可读
-HttpJsonClient 和 ModelProviderJsonSupport 是包内实现细节，应保持 package-private
-如果拆成 client / support 子 package，这两个 helper 需要改成 public 才能被 provider 使用，会扩大模块公开 API
+OpenAI / Anthropic provider 已经开始共享较多协议转换和 HTTP 传输逻辑
+protocol 用于隔离模型协议 JSON 载荷转换
+transport 用于隔离 JDK HttpURLConnection、响应体读取和 SSE data 行处理
+子包内 public helper 是跨 Java package 复用所需，仍按模块内部实现看待
 ```
 
 当前公开边界：
@@ -66,12 +71,13 @@ AnthropicCompatibleModelProvider
 HttpModelProviderProperties
 ```
 
-当前包内实现：
+当前模块内部实现：
 
 ```text
-HttpJsonClient
-ModelProviderJsonSupport
-ModelProviderJsonFields
+protocol.ModelProviderJsonSupport
+protocol.ModelProviderJsonFields
+transport.HttpJsonClient
+transport.HttpRequestSupport
 ```
 
 后续当 OpenAI / Anthropic / MCP / stream / codec / client 类明显增多时，再整体拆 package，并同步重新设计公开 API 边界：
@@ -92,8 +98,8 @@ com.sean.agenthub.agent.provider.http.codec
 ```text
 接口表示能力契约，不应仅作为常量容器
 协议字段常量虽然是常见单词，但在本模块里属于 OpenAI / Anthropic 载荷转换实现细节
-public 常量会形成外部依赖点，后续拆 openai / anthropic / mcp / codec 时会增加兼容负担
-当前 ModelProviderJsonFields 保持 package-private，仅服务包内协议转换逻辑
+public 常量类不等于外部稳定契约，当前仅服务模块内部协议转换逻辑
+业务侧不应依赖 protocol / transport 子包类型
 ```
 
 后续如果确实出现跨模块稳定复用需求，再单独设计公开常量类型：

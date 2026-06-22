@@ -76,12 +76,25 @@ MCP Adapter
           -> HTTP 直连 / Spring AI / LangChain4j / Hutool AI / MCP SDK
 ```
 
+核心扩展点优先采用“接口 + 默认实现 + 可选包装器”的模式。以 `AgentRuntime` 为例：
+
+```text
+AgentRuntime 是稳定接口
+DefaultAgentRuntime 是平台默认编排
+DelegatingAgentRuntime 是默认包装器基类
+业务自定义 AgentRuntime 用于替换核心执行顺序
+AgentRuntime Decorator / 包装器用于增强默认链路
+```
+
+这样做的目的不是为了抽象而抽象，而是为了避免业务侧复制 `DefaultAgentRuntime` 的复杂编排。普通增强，例如日志、指标、Trace、限流、异常转换，应优先继承 `DelegatingAgentRuntime` 或使用等价包装器；只有多轮规划、人工审批、异步队列、Tool 执行策略整体变化这类核心流程变化，才新写完整 `AgentRuntime` 实现。
+
 ## 3. 推荐项目结构
 
 ```text
 agent-platform
 ├─ agent-core
 │  ├─ AgentRuntime
+│  ├─ DelegatingAgentRuntime
 │  ├─ AgentService
 │  ├─ AgentTool
 │  ├─ ToolRegistry
@@ -891,23 +904,59 @@ com.sean.agenthub.agent.provider.http    HTTP 标准模型协议适配
 agent-model-provider-http 包结构约定：
 
 ```text
-当前不拆子 package，也不采用目录分层和 package 不一致的结构。
-Java 源码目录应与 package 保持一致。
-HttpJsonClient、ModelProviderJsonSupport、ModelProviderJsonFields 属于包内实现细节，保持 package-private，避免扩大公开 API。
-当前对外公开 OpenAiCompatibleModelProvider、AnthropicCompatibleModelProvider、HttpModelProviderProperties。
-后续类明显增多后，再整体拆为 http.openai、http.anthropic、http.client、http.codec 等 package，并同步设计公开 API 边界。
+当前已从单一 http package 拆出内部 protocol / transport 子包。
+Java 源码目录应与 package 保持一致，不采用目录分层和 package 不一致的结构。
+com.sean.agenthub.agent.provider.http 保留对外接入类和配置类。
+com.sean.agenthub.agent.provider.http.protocol 放模型协议 JSON 转换和字段常量。
+com.sean.agenthub.agent.provider.http.transport 放 JDK HttpURLConnection 传输辅助逻辑。
+当前对外稳定公开 OpenAiCompatibleModelProvider、AnthropicCompatibleModelProvider、HttpModelProviderProperties。
+protocol / transport 下的 public 类型是跨 package 复用所需的模块内部实现类型，不承诺作为业务侧稳定 API。
+后续类继续增多后，再评估是否进一步拆为 http.openai、http.anthropic、http.client、http.codec 等 package，并同步设计公开 API 边界。
 ```
 
 常量设计约定：
 
 ```text
 不使用 interface 作为常量容器，接口只表达能力契约。
-协议 JSON 字段和值可用 package-private final class 承载。
-常见字段名不等于公开 API，只有外部有稳定复用场景时才 public。
+协议 JSON 字段和值可用 final class 承载。
+如果常量类与使用方在同一 Java package 内，优先保持 package-private。
+如果常量类位于 protocol 子包并被父级 provider 复用，可保持 public，但仅作为模块内部实现类型使用。
+常见字段名不等于公开 API，只有外部有稳定复用场景时才纳入文档化公开契约。
 后续如需跨模块复用，再设计 JsonSchemaFields、OpenAiProtocolFields、McpProtocolFields 等明确公开类型。
 ```
 
-## 14. 待调研问题
+## 14. 当前缺口和推进顺序
+
+当前 AgentHub 已完成嵌入式只读 Agent SDK 的 MVP 闭环，但还不是完整平台。后续推进应优先补“真实接入稳定性”和“治理闭环”，暂不急着铺开大而全能力。
+
+当前主要缺口：
+
+```text
+生产业务系统接入数量不足：已有外部最小 demo，仍缺真实生产系统验收反馈。
+Gateway Server 未实现：当前仍以 SDK / starter 接入为主，缺统一注册、限流、审计和模型出口。
+Admin UI 未实现：缺 Tool 管理、调用日志、权限配置、模型配置和会话查看界面。
+持久化能力不足：Memory、审计、附件记录当前以默认或样板实现为主，缺 Redis / 数据库落地方案。
+真实附件解析能力不足：agent-document-processing 仍以文本解析、Markdown/PDF 大纲和图片 mock OCR 为主，缺 Word / Excel / 图片 OCR 的生产级适配。
+安全治理仍偏 MVP：READ Tool 已覆盖权限和审计，WRITE / DANGEROUS Tool、人工审批、Prompt Injection 隔离还未进入实现。
+可观测性不足：缺统一 TraceId、指标、模型耗时、Tool 耗时、Token 用量和错误分布统计。
+模型协议兼容性仍需真实场景打磨：DeepSeek / OpenAI-compatible 主链路优先，其他供应商暂不扩大适配面。
+MCP 仍是最小 adapter：已有 AgentTool 到 MCP Tool 的映射 PoC，但未建设完整 MCP Server / Client 生命周期。
+文档和验收需要持续随代码更新：设计文档、README、验收清单必须跟随包结构和能力边界同步。
+```
+
+建议推进顺序：
+
+```text
+P0 保持当前 Maven 测试全绿，先收敛 HTTP provider 拆包后的文档和 README。
+P0 继续补真实业务接入手册和踩坑记录，优先沉淀生产接入问题。
+P1 为 agent-document-processing 补真实文件解析 adapter，优先 Word / Excel / 图片 OCR 的扩展点和失败语义。
+P1 设计持久化接口落地样板：Memory、AuditEvent、附件记录至少各给一个数据库或 Redis 方向方案。
+P1 增加可观测性包装器样例：AgentRuntime decorator 记录耗时、TraceId 和 Tool 执行摘要。
+P2 再启动 Gateway Server，复用当前 AgentRuntime / ToolRegistry / Permission / Audit 抽象。
+P2 再启动 Admin UI 和完整 MCP Server，避免早于真实接入反馈过度设计。
+```
+
+## 15. 待调研问题
 
 ```text
 目标业务系统有哪些？
@@ -922,7 +971,7 @@ HttpJsonClient、ModelProviderJsonSupport、ModelProviderJsonFields 属于包内
 是否有国产模型或内网模型要求？
 ```
 
-## 15. 给 Codex / Claude 的评估任务
+## 16. 给 Codex / Claude 的评估任务
 
 请基于本文档评估以下内容：
 
@@ -939,7 +988,7 @@ HttpJsonClient、ModelProviderJsonSupport、ModelProviderJsonFields 属于包内
 10. 请给出推荐的 Maven 多模块结构和核心接口代码。
 ```
 
-## 16. 可行性评估结论
+## 17. 可行性评估结论
 
 整体方案可行，适合作为企业业务系统的 Agent 能力层基础架构。
 

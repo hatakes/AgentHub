@@ -19,6 +19,14 @@ import org.springframework.web.multipart.MultipartFile;
 @Component
 @Order(10)
 public class MarkdownAttachmentContentParser implements AttachmentContentParser {
+
+    /**
+     * 判断是否支持解析当前文件。
+     * <p>支持 text/markdown、text/x-markdown content-type，以及 .md、.markdown 扩展名。</p>
+     *
+     * @param file 上传的文件
+     * @return 是否支持
+     */
     @Override
     public boolean supports(MultipartFile file) {
         String contentType = file.getContentType();
@@ -29,6 +37,14 @@ public class MarkdownAttachmentContentParser implements AttachmentContentParser 
                 || filename.toLowerCase().endsWith(".markdown")));
     }
 
+    /**
+     * 解析 Markdown 文件。
+     * <p>读取文件内容为 UTF-8 文本，提取标题列表作为元数据。</p>
+     *
+     * @param file 上传的 Markdown 文件
+     * @return 解析后的内容，parserName 为 markdown
+     * @throws IOException 文件读取异常
+     */
     @Override
     public ParsedAttachmentContent parse(MultipartFile file) throws IOException {
         String text = new String(file.getBytes(), StandardCharsets.UTF_8);
@@ -41,6 +57,13 @@ public class MarkdownAttachmentContentParser implements AttachmentContentParser 
         return new ParsedAttachmentContent(text, "markdown", metadata);
     }
 
+    /**
+     * 从 Markdown 文本中提取标题列表。
+     * <p>识别以 # 开头的行，去除 # 符号后返回标题文本。</p>
+     *
+     * @param text Markdown 文本
+     * @return 标题列表
+     */
     private List<String> extractHeadings(String text) {
         List<String> headings = new ArrayList<String>();
         String[] lines = text.split("\\r?\\n");

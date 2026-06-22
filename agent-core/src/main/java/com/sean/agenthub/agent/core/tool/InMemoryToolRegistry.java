@@ -18,18 +18,35 @@ import java.util.Optional;
  * @author Sean
  */
 public class InMemoryToolRegistry implements ToolRegistry {
+    /** 以 Tool 名称为 key 的有序注册表，保持注册顺序。 */
     private final Map<String, AgentTool> tools = new LinkedHashMap<String, AgentTool>();
 
+    /**
+     * 列出所有已注册的 Tool。
+     *
+     * @return Tool 列表（按注册顺序）
+     */
     @Override
     public List<AgentTool> list() {
         return new ArrayList<AgentTool>(tools.values());
     }
 
+    /**
+     * 按名称查找 Tool。
+     *
+     * @param name Tool 名称
+     * @return 匹配的 Tool，不存在时返回空
+     */
     @Override
     public Optional<AgentTool> get(String name) {
         return Optional.ofNullable(tools.get(name));
     }
 
+    /**
+     * 注册一个 Tool，null 会被忽略。
+     *
+     * @param tool 待注册的 Tool
+     */
     @Override
     public void register(AgentTool tool) {
         if (tool == null) {

@@ -19,6 +19,14 @@ import org.springframework.web.multipart.MultipartFile;
 @Component
 @Order(20)
 public class PdfAttachmentContentParser implements AttachmentContentParser {
+
+    /**
+     * 判断是否支持解析当前文件。
+     * <p>支持 application/pdf content-type 以及 .pdf 扩展名。</p>
+     *
+     * @param file 上传的文件
+     * @return 是否支持
+     */
     @Override
     public boolean supports(MultipartFile file) {
         String contentType = file.getContentType();
@@ -27,6 +35,14 @@ public class PdfAttachmentContentParser implements AttachmentContentParser {
                 || (filename != null && filename.toLowerCase().endsWith(".pdf"));
     }
 
+    /**
+     * 解析 PDF 文件。
+     * <p>使用 Apache PDFBox 提取文本内容，同时读取页数和文档标题等元数据。</p>
+     *
+     * @param file 上传的 PDF 文件
+     * @return 解析后的内容，parserName 为 pdfbox
+     * @throws IOException 文件读取异常
+     */
     @Override
     public ParsedAttachmentContent parse(MultipartFile file) throws IOException {
         PDDocument document = PDDocument.load(file.getInputStream());
@@ -49,6 +65,12 @@ public class PdfAttachmentContentParser implements AttachmentContentParser {
         }
     }
 
+    /**
+     * 判断字符串是否包含有效文本。
+     *
+     * @param value 字符串
+     * @return 是否包含有效文本
+     */
     private boolean hasText(String value) {
         return value != null && !value.trim().isEmpty();
     }

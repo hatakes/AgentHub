@@ -18,8 +18,15 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author Sean
  */
 public class InMemoryAgentMemory implements AgentMemory {
+    /** 以会话 ID 为 key 的消息存储，使用 ConcurrentHashMap 保证线程安全。 */
     private final Map<String, List<AgentMessage>> messages = new ConcurrentHashMap<String, List<AgentMessage>>();
 
+    /**
+     * 加载指定会话的历史消息。
+     *
+     * @param sessionId 会话 ID
+     * @return 历史消息列表，不存在时返回空列表
+     */
     @Override
     public List<AgentMessage> load(String sessionId) {
         List<AgentMessage> history = messages.get(normalizeSessionId(sessionId));
@@ -29,6 +36,12 @@ public class InMemoryAgentMemory implements AgentMemory {
         return new ArrayList<AgentMessage>(history);
     }
 
+    /**
+     * 保存一条消息到指定会话。
+     *
+     * @param sessionId 会话 ID
+     * @param message   待保存的消息
+     */
     @Override
     public void save(String sessionId, AgentMessage message) {
         String key = normalizeSessionId(sessionId);
@@ -38,11 +51,22 @@ public class InMemoryAgentMemory implements AgentMemory {
         messages.get(key).add(message);
     }
 
+    /**
+     * 清除指定会话的所有历史消息。
+     *
+     * @param sessionId 会话 ID
+     */
     @Override
     public void clear(String sessionId) {
         messages.remove(normalizeSessionId(sessionId));
     }
 
+    /**
+     * 规范化会话 ID，null 或空字符串统一为 "default"。
+     *
+     * @param sessionId 原始会话 ID
+     * @return 规范化后的会话 ID
+     */
     private String normalizeSessionId(String sessionId) {
         return sessionId == null || sessionId.trim().isEmpty() ? "default" : sessionId;
     }

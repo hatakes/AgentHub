@@ -20,24 +20,50 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 /**
  * Starter 暴露的 HTTP 对话入口。
  *
+ * <p>这个 Controller 是 starter 提供的最小 HTTP 面。业务系统如果已有自己的网关、鉴权或统一返回结构，
+ * 可以不使用它，直接注入 AgentService 组合到自己的 Controller 中。</p>
+ *
  * @author Sean
  */
 @RestController
 public class AgentChatController {
+    /** Agent 服务，处理对话请求。 */
     private final AgentService agentService;
+    /** JSON 序列化器，用于 SSE 事件序列化。 */
     private final ObjectMapper objectMapper = new ObjectMapper();
 
+    /**
+     * 创建对话控制器。
+     *
+     * @param agentService Agent 服务
+     */
     public AgentChatController(AgentService agentService) {
         this.agentService = agentService;
     }
 
+    /**
+     * 非流式对话接口。
+     *
+     * @param request 用户请求
+     * @return Agent 响应
+     */
     @PostMapping("/agent/chat")
     public AgentResponse chat(@RequestBody AgentRequest request) {
         return agentService.chat(request);
     }
 
+    /**
+     * 流式对话接口，返回 SSE 事件流。
+     *
+     * <p>SSE 事件类型：delta（文本增量）、tool（Tool 执行结果）、complete（完成）、error（错误）。</p>
+     *
+     * @param request 用户请求
+     * @return SSE 流式响应体
+     */
     @PostMapping(value = "/agent/chat/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public StreamingResponseBody streamChat(@RequestBody final AgentRequest request) {
+        // SSE 事件保持简单稳定：delta 传文本片段，tool 传受控 Tool 执行结果，complete / error 表示终态。
+        // 前端只需要按 event 类型分流，不需要理解具体模型供应商的流式协议。
         return new StreamingResponseBody() {
             @Override
             public void writeTo(final OutputStream outputStream) {
@@ -66,11 +92,20 @@ public class AgentChatController {
         };
     }
 
+    /**
+     * 写入一个 SSE 事件帧。
+     *
+     * @param outputStream 输出流
+     * @param event        事件类型
+     * @param key          数据字段名
+     * @param value        数据字段值
+     */
     private void writeEvent(OutputStream outputStream, String event, String key, Object value) {
         try {
             Map<String, Object> payload = new LinkedHashMap<String, Object>();
             payload.put("type", event);
             payload.put(key, value);
+            // 每个事件都单独 flush，保证调用方能尽快收到模型增量和 Tool 状态。
             String frame = "event: " + event + "\n"
                     + "data: " + objectMapper.writeValueAsString(payload) + "\n\n";
             outputStream.write(frame.getBytes(StandardCharsets.UTF_8));

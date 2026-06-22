@@ -166,10 +166,11 @@ README 中的 Quick Start 与文档验收命令一致
 
 ```text
 ModelProviderCapability 迁入 core.capability
-agent-model-provider-http 当前保持单一 http package
-HttpJsonClient、ModelProviderJsonSupport、ModelProviderJsonFields 保持 package-private
-协议字段常量使用 package-private final class，不使用 interface 常量容器
-public 只用于稳定外部契约，不因字段名常见而放开
+agent-model-provider-http 已拆出 protocol / transport 内部子包
+OpenAiCompatibleModelProvider、AnthropicCompatibleModelProvider、HttpModelProviderProperties 是稳定公开边界
+protocol / transport 下的 public helper 是模块内部复用类型，业务侧不应作为稳定 API 依赖
+协议字段常量使用 final class，不使用 interface 常量容器
+常见字段名不等于公开 API，只有外部稳定复用场景才纳入公开契约
 ```
 
 ## 5. P0：MVP 接入说明和验收清单 ✅ 已完成
@@ -280,7 +281,39 @@ Resources / Prompts 完整协议面
 Gateway 多租户 MCP 暴露
 ```
 
-## 8. 暂不进入
+## 8. P0 / P1：当前缺口收敛
+
+状态：进行中
+
+当前项目已经有 SDK、starter、HTTP provider、MCP adapter、示例业务 Tool、外部最小业务样板和智能附件分析样板。下一阶段不继续横向铺能力，先把“真实接入会遇到的问题”补扎实。
+
+P0 缺口：
+
+```text
+设计文档、README、进度文档持续同步实际包结构和能力边界
+保持 Maven 测试全绿，避免文档推进时破坏主链路
+补生产业务系统接入验收记录，至少选一个真实只读 Tool 走完整权限、审计、脱敏和失败场景
+基于 DelegatingAgentRuntime 继续补日志、指标、Trace、耗时统计这类非侵入增强样例
+```
+
+P1 缺口：
+
+```text
+agent-document-processing 补真实文件解析 adapter 方向，优先 Word / Excel / 图片 OCR 的扩展点和失败语义
+补持久化落地方向：AgentMemory、AuditEvent、附件记录至少给一个 Redis 或数据库样板方案
+补可观测性口径：TraceId、模型耗时、Tool 耗时、Token 用量、错误分类
+补安全治理口径：Prompt Injection 隔离、敏感字段策略、WRITE / DANGEROUS Tool 审批模型
+```
+
+暂缓：
+
+```text
+在没有真实生产接入反馈前，不启动完整 Gateway Server / Admin UI
+在没有明确外部 Agent 接入需求前，不启动完整 MCP Server / Client
+在 DS / OpenAI-compatible 主链路未继续打稳前，不扩大更多模型供应商真实联调
+```
+
+## 9. 暂不进入
 
 ```text
 新增模型适配
@@ -309,7 +342,7 @@ agent-model-provider-langchain4j：JDK 17+ profile 下完成 TEXT_CHAT / TEXT_ST
 agent-model-provider-spring-ai：JDK 17+ profile 下完成 TEXT_CHAT / TEXT_STREAM / Tool schema 下发 / ToolCall 响应映射
 ```
 
-## 9. 最小验收命令
+## 10. 最小验收命令
 
 ```bash
 mvn test
@@ -323,7 +356,7 @@ curl -sS -N -X POST http://127.0.0.1:8080/agent/chat/stream \
   -d '{"sessionId":"ds-tool-001","userId":"u001","message":"帮我查询用户信息"}'
 ```
 
-## 10. 下一次开发入口
+## 11. 下一次开发入口
 
 同级独立最小业务样板 `../agent-business-minimal-demo` 已完成第一份外部业务接入验收记录：
 
@@ -363,4 +396,6 @@ agent-document-processing 智能附件分析业务样板第一版
 docs/agenthub-attachment-analysis-acceptance.md 智能附件分析业务样板验收记录
 agent-model-provider-langchain4j Java 17 TEXT_CHAT / TEXT_STREAM / Tool schema 下发 / ToolCall 响应映射 adapter Spike
 agent-model-provider-spring-ai Java 17 TEXT_CHAT / TEXT_STREAM / Tool schema 下发 / ToolCall 响应映射 adapter Spike
+agent-model-provider-http protocol / transport 内部拆包
+AgentRuntime 接口 + 默认实现 + DelegatingAgentRuntime 可选包装器设计说明
 ```

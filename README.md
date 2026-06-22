@@ -1,10 +1,92 @@
 # AgentHub
 
-AgentHub is a reusable Agent capability platform prototype.
+AgentHub 是一个可复用的 Agent 能力平台原型。
 
-It focuses on the business Agent abstraction layer: Tool registration, permission, audit, memory, runtime orchestration, and Spring Boot integration. Model invocation can be provided by HTTP-compatible adapters today, with Java 17+ adapter spikes for Spring AI and LangChain4j.
+它聚焦于业务 Agent 抽象层：Tool 注册、权限、审计、记忆、运行时编排和 Spring Boot 集成。模型调用目前通过 HTTP 兼容适配器提供，同时提供 Java 17+ 的 Spring AI 和 LangChain4j 适配器 Spike。
 
-Current scope:
+## 快速开始
+
+```bash
+# 1. 构建并安装
+mvn install -DskipTests
+
+# 2. 运行示例应用
+mvn -pl agent-example-spring-boot2 spring-boot:run
+
+# 3. 测试对话接口
+curl -sS -X POST http://127.0.0.1:8080/agent/chat \
+  -H 'Content-Type: application/json' \
+  -d '{"sessionId":"s001","userId":"u001","message":"帮我查询用户信息"}'
+```
+
+## 架构概览
+
+```text
+┌─────────────────────────────────────────────────────────────┐
+│                    业务系统 (Spring Boot)                     │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
+│  │  AgentTool   │  │ AgentTool    │  │ AgentTool    │      │
+│  │  (字典查询)   │  │ (文件查询)    │  │ (用户查询)    │      │
+│  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘      │
+│         └─────────────────┼─────────────────┘              │
+│                           ▼                                 │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │              agent-spring-boot-starter               │   │
+│  │  ToolRegistry / AgentMemory / PermissionEngine      │   │
+│  │  AuditService / ModelProvider / AgentRuntime         │   │
+│  └─────────────────────────┬───────────────────────────┘   │
+└─────────────────────────────┼───────────────────────────────┘
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│                       agent-core                            │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐         │
+│  │ AgentRuntime │  │ ModelProvider│  │  AgentTool  │         │
+│  │   (编排核心)  │  │  (模型隔离)  │  │  (能力插件)  │         │
+│  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘         │
+│         │                │                │                 │
+│         ▼                ▼                ▼                 │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐         │
+│  │ ToolRegistry │  │ Permission  │  │ AuditService│         │
+│  │  (能力注册)   │  │  (权限检查)  │  │  (审计记录)  │         │
+│  └─────────────┘  └─────────────┘  └─────────────┘         │
+└─────────────────────────────────────────────────────────────┘
+                              │
+        ┌─────────────────────┼─────────────────────┐
+        ▼                     ▼                     ▼
+┌──────────────┐  ┌──────────────┐  ┌──────────────┐
+│ HTTP 适配器   │  │ LangChain4j  │  │  Spring AI   │
+│ OpenAI/       │  │   适配器      │  │   适配器      │
+│ Anthropic     │  │  (JDK 17+)   │  │  (JDK 17+)   │
+└──────────────┘  └──────────────┘  └──────────────┘
+```
+
+## 核心执行链路
+
+```text
+用户请求 → AgentService → AgentRuntime
+  │
+  ├─ 1. 保存用户消息到 Memory
+  │
+  ├─ 2. 构建 ModelRequest (消息历史 + 可用 Tool)
+  │
+  ├─ 3. 调用 ModelProvider.chat()
+  │     ├─ 返回文本 → 直接回答
+  │     └─ 返回 ToolCall → 继续执行
+  │
+  ├─ 4. Tool 执行 (受控边界)
+  │     ├─ ToolRegistry 查找
+  │     ├─ 风险等级校验 (MVP 只允许 READ)
+  │     ├─ 必填参数校验
+  │     ├─ PermissionEngine 权限检查
+  │     ├─ Tool.execute()
+  │     └─ AuditService 审计记录
+  │
+  ├─ 5. 把 Tool 结果交给模型总结
+  │
+  └─ 6. 保存助手回答到 Memory，返回 AgentResponse
+```
+
+## 当前范围
 
 ```text
 agent-core

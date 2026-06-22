@@ -35,17 +35,34 @@ import java.util.Set;
 /**
  * LangChain4j ChatModel backed ModelProvider.
  *
+ * <p>这个适配器让已经使用 LangChain4j 的业务系统可以复用现有 ChatModel，同时仍然把 Tool 执行权留在
+ * AgentHub Runtime 中。LangChain4j 负责模型协议封装，AgentHub 负责权限、审计和 Tool 生命周期。</p>
+ *
  * @author Sean
  */
 public class LangChain4jModelProvider implements ModelProvider {
+    /** LangChain4j 非流式聊天模型。 */
     private final ChatModel chatModel;
+    /** LangChain4j 流式聊天模型，可选。 */
     private final StreamingChatModel streamingChatModel;
+    /** JSON 序列化器，用于解析 Tool 参数。 */
     private final ObjectMapper objectMapper = new ObjectMapper();
 
+    /**
+     * 创建非流式 LangChain4j provider。
+     *
+     * @param chatModel LangChain4j 聊天模型
+     */
     public LangChain4jModelProvider(ChatModel chatModel) {
         this(chatModel, null);
     }
 
+    /**
+     * 创建 LangChain4j provider，可选支持流式。
+     *
+     * @param chatModel         非流式聊天模型
+     * @param streamingChatModel 流式聊天模型，null 表示不支持流式
+     */
     public LangChain4jModelProvider(ChatModel chatModel, StreamingChatModel streamingChatModel) {
         if (chatModel == null) {
             throw new IllegalArgumentException("chatModel must not be null");
@@ -54,6 +71,11 @@ public class LangChain4jModelProvider implements ModelProvider {
         this.streamingChatModel = streamingChatModel;
     }
 
+    /**
+     * 返回 provider 支持的能力集合。
+     *
+     * @return 能力集合，包含 TEXT_CHAT，有 streamingChatModel 时额外包含 TEXT_STREAM
+     */
     @Override
     public Set<ModelProviderCapability> capabilities() {
         EnumSet<ModelProviderCapability> capabilities = EnumSet.of(ModelProviderCapability.TEXT_CHAT);
@@ -63,6 +85,15 @@ public class LangChain4jModelProvider implements ModelProvider {
         return capabilities;
     }
 
+    /**
+     * 执行非流式聊天调用。
+     *
+     * <p>将 ModelRequest 转换为 LangChain4j ChatRequest，调用 chatModel，
+     * 再将响应转换为 ModelResponse（文本或 ToolCall）。</p>
+     *
+     * @param request 模型请求
+     * @return 模型响应
+     */
     @Override
     public ModelResponse chat(ModelRequest request) {
         ChatResponse response = chatModel.chat(toChatRequest(request));
@@ -77,9 +108,18 @@ public class LangChain4jModelProvider implements ModelProvider {
         return ModelResponse.answer(text == null ? "" : text);
     }
 
+    /**
+     * 执行流式聊天调用。
+     *
+     * <p>如果没有注入 StreamingChatModel，退化为非流式调用。</p>
+     *
+     * @param request  模型请求
+     * @param listener 流式输出回调
+     */
     @Override
     public void streamChat(ModelRequest request, final ModelStreamListener listener) {
         if (streamingChatModel == null) {
+            // 没有注入 StreamingChatModel 时沿用 ModelProvider 默认退化逻辑，避免调用方必须区分 provider 能力。
             ModelProvider.super.streamChat(request, listener);
             return;
         }
@@ -103,6 +143,12 @@ public class LangChain4jModelProvider implements ModelProvider {
         });
     }
 
+    /**
+     * 将 AgentHub ModelRequest 转换为 LangChain4j ChatRequest。
+     *
+     * @param request AgentHub 请求
+     * @return LangChain4j 请求
+     */
     private ChatRequest toChatRequest(ModelRequest request) {
         ChatRequest.Builder builder = ChatRequest.builder()
                 .messages(toMessages(request));
@@ -113,6 +159,12 @@ public class LangChain4jModelProvider implements ModelProvider {
         return builder.build();
     }
 
+    /**
+     * 将 AgentHub 消息列表转换为 LangChain4j 消息列表。
+     *
+     * @param request AgentHub 请求
+     * @return LangChain4j 消息列表
+     */
     private List<ChatMessage> toMessages(ModelRequest request) {
         List<ChatMessage> messages = new ArrayList<ChatMessage>();
         if (request == null) {
@@ -139,6 +191,15 @@ public class LangChain4jModelProvider implements ModelProvider {
         return messages;
     }
 
+    /**
+     * 将 AgentHub Tool 列表转换为 LangChain4j ToolSpecification 列表。
+     *
+     * <p>ToolSpecification 只描述可选工具，不包含实际执行函数；
+     * Runtime 会在模型返回 ToolCall 后统一执行。</p>
+     *
+     * @param request AgentHub 请求
+     * @return ToolSpecification 列表
+     */
     private List<ToolSpecification> toToolSpecifications(ModelRequest request) {
         List<ToolSpecification> toolSpecifications = new ArrayList<ToolSpecification>();
         if (request == null || request.getTools() == null) {
@@ -148,6 +209,7 @@ public class LangChain4jModelProvider implements ModelProvider {
             if (tool == null || !hasText(tool.name())) {
                 continue;
             }
+            // ToolSpecification 只描述可选工具，不包含实际执行函数；Runtime 会在模型返回 ToolCall 后统一执行。
             toolSpecifications.add(ToolSpecification.builder()
                     .name(tool.name())
                     .description(tool.description())
@@ -157,6 +219,12 @@ public class LangChain4jModelProvider implements ModelProvider {
         return toolSpecifications;
     }
 
+    /**
+     * 将 AgentHub ToolSchema 转换为 LangChain4j JsonObjectSchema。
+     *
+     * @param schema AgentHub ToolSchema
+     * @return LangChain4j JsonObjectSchema
+     */
     private JsonObjectSchema toJsonObjectSchema(ToolSchema schema) {
         JsonObjectSchema.Builder builder = JsonObjectSchema.builder()
                 .additionalProperties(false);
@@ -175,6 +243,13 @@ public class LangChain4jModelProvider implements ModelProvider {
         return builder.build();
     }
 
+    /**
+     * 向 JsonObjectSchema.Builder 添加单个属性。
+     *
+     * @param builder  Schema 构建器
+     * @param name     属性名
+     * @param property 属性定义
+     */
     private void addProperty(JsonObjectSchema.Builder builder, String name, ToolSchemaProperty property) {
         String description = property == null ? null : property.getDescription();
         if (property != null && property.getEnumValues() != null && !property.getEnumValues().isEmpty()) {
@@ -193,10 +268,22 @@ public class LangChain4jModelProvider implements ModelProvider {
         }
     }
 
+    /**
+     * 判断字符串非空。
+     *
+     * @param value 待检查字符串
+     * @return 非空非空白返回 true
+     */
     private boolean hasText(String value) {
         return value != null && !value.trim().isEmpty();
     }
 
+    /**
+     * 将 LangChain4j ToolExecutionRequest 列表转换为 AgentHub ToolCall 列表。
+     *
+     * @param requests LangChain4j ToolExecutionRequest 列表
+     * @return AgentHub ToolCall 列表
+     */
     private List<ToolCall> toToolCalls(List<ToolExecutionRequest> requests) {
         List<ToolCall> toolCalls = new ArrayList<ToolCall>();
         if (requests == null) {
@@ -211,6 +298,12 @@ public class LangChain4jModelProvider implements ModelProvider {
         return toolCalls;
     }
 
+    /**
+     * 解析 Tool 参数 JSON 字符串为 Map。
+     *
+     * @param argumentsJson 参数 JSON 字符串
+     * @return 参数 Map
+     */
     private Map<String, Object> parseArguments(String argumentsJson) {
         if (!hasText(argumentsJson)) {
             return new LinkedHashMap<String, Object>();
