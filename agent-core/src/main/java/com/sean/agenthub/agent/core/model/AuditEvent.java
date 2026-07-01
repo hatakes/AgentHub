@@ -25,7 +25,7 @@ public class AuditEvent {
     private String toolName;
     /** 用户原始请求摘要。 */
     private String requestSummary;
-    /** Tool 执行结果摘要（截断后的 data.toString）。 */
+    /** Tool 执行结果摘要（默认脱敏并截断后的 data.toString）。 */
     private String toolResultSummary;
     /** Tool 执行耗时（毫秒）。 */
     private long latencyMs;

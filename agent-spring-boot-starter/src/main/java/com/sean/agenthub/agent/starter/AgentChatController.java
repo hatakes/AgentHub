@@ -49,6 +49,10 @@ public class AgentChatController {
      */
     @PostMapping("/agent/chat")
     public AgentResponse chat(@RequestBody AgentRequest request) {
+        String validationError = validateRequest(request);
+        if (validationError != null) {
+            return AgentResponse.error(validationError);
+        }
         return agentService.chat(request);
     }
 
@@ -67,6 +71,11 @@ public class AgentChatController {
         return new StreamingResponseBody() {
             @Override
             public void writeTo(final OutputStream outputStream) {
+                String validationError = validateRequest(request);
+                if (validationError != null) {
+                    writeEvent(outputStream, "error", "message", validationError);
+                    return;
+                }
                 agentService.streamChat(request, new AgentStreamListener() {
                     @Override
                     public void onDelta(String delta) {
@@ -90,6 +99,25 @@ public class AgentChatController {
                 });
             }
         };
+    }
+
+    /**
+     * 校验 starter HTTP 入口的最小必填字段。
+     *
+     * @param request 用户请求
+     * @return 错误信息，合法时返回 null
+     */
+    private String validateRequest(AgentRequest request) {
+        if (request == null) {
+            return "Agent request must not be null";
+        }
+        if (request.getSessionId() == null || request.getSessionId().trim().isEmpty()) {
+            return "Agent request sessionId must not be blank";
+        }
+        if (request.getMessage() == null || request.getMessage().trim().isEmpty()) {
+            return "Agent request message must not be blank";
+        }
+        return null;
     }
 
     /**

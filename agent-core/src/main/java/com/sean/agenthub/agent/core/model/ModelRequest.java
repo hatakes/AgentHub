@@ -30,9 +30,19 @@ public class ModelRequest {
     private List<AgentMessage> messages = new ArrayList<AgentMessage>();
     /** 可用 Tool 列表，来自 ToolRegistry 快照。 */
     private List<AgentTool> tools = new ArrayList<AgentTool>();
-    /** 最近一次 Tool 执行结果（兼容字段）。 */
+    /**
+     * 最近一次 Tool 执行结果（兼容字段）。
+     *
+     * @deprecated 新 provider 请读取 {@link #getLastToolExecutions()}，最后一次执行结果为列表最后一项。
+     */
+    @Deprecated
     private ToolResult lastToolResult;
-    /** 最近一次 Tool 调用描述（兼容字段）。 */
+    /**
+     * 最近一次 Tool 调用描述（兼容字段）。
+     *
+     * @deprecated 新 provider 请读取 {@link #getLastToolExecutions()}，最后一次调用为列表最后一项。
+     */
+    @Deprecated
     private ToolCall lastToolCall;
     /** 本次所有 Tool 执行结果，用于模型总结阶段回传上下文。 */
     private List<ToolExecutionResult> lastToolExecutions = new ArrayList<ToolExecutionResult>();
@@ -167,7 +177,9 @@ public class ModelRequest {
      * 获取最近一次 Tool 执行结果（兼容字段）。
      *
      * @return Tool 执行结果
+     * @deprecated 新 provider 请读取 {@link #getLastToolExecutions()}，最后一次执行结果为列表最后一项。
      */
+    @Deprecated
     public ToolResult getLastToolResult() {
         return lastToolResult;
     }
@@ -176,7 +188,9 @@ public class ModelRequest {
      * 设置最近一次 Tool 执行结果。
      *
      * @param lastToolResult Tool 执行结果
+     * @deprecated 新 provider 请设置 {@link #setLastToolExecutions(List)}。
      */
+    @Deprecated
     public void setLastToolResult(ToolResult lastToolResult) {
         this.lastToolResult = lastToolResult;
     }
@@ -185,7 +199,9 @@ public class ModelRequest {
      * 获取最近一次 Tool 调用描述（兼容字段）。
      *
      * @return Tool 调用描述
+     * @deprecated 新 provider 请读取 {@link #getLastToolExecutions()}，最后一次调用为列表最后一项。
      */
+    @Deprecated
     public ToolCall getLastToolCall() {
         return lastToolCall;
     }
@@ -194,7 +210,9 @@ public class ModelRequest {
      * 设置最近一次 Tool 调用描述。
      *
      * @param lastToolCall Tool 调用描述
+     * @deprecated 新 provider 请设置 {@link #setLastToolExecutions(List)}。
      */
+    @Deprecated
     public void setLastToolCall(ToolCall lastToolCall) {
         this.lastToolCall = lastToolCall;
     }

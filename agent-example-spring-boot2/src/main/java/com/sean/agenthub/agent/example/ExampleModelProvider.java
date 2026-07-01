@@ -4,6 +4,7 @@ import com.sean.agenthub.agent.core.api.ModelProvider;
 import com.sean.agenthub.agent.core.model.ModelRequest;
 import com.sean.agenthub.agent.core.model.ModelResponse;
 import com.sean.agenthub.agent.core.model.ToolCall;
+import com.sean.agenthub.agent.core.model.ToolExecutionResult;
 import java.util.HashMap;
 import java.util.Map;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -22,9 +23,11 @@ import org.springframework.stereotype.Component;
 public class ExampleModelProvider implements ModelProvider {
     @Override
     public ModelResponse chat(ModelRequest request) {
-        if (request.getLastToolResult() != null) {
+        if (request.getLastToolExecutions() != null && !request.getLastToolExecutions().isEmpty()) {
             // 第二轮调用表示 Runtime 已经执行完 Tool，示例模型只负责把 Tool 结果总结成用户可读文本。
-            return ModelResponse.answer("查询结果：" + request.getLastToolResult().getData());
+            ToolExecutionResult lastExecution = request.getLastToolExecutions()
+                    .get(request.getLastToolExecutions().size() - 1);
+            return ModelResponse.answer("查询结果：" + lastExecution.getToolResult().getData());
         }
 
         String message = request.getUserMessage() == null ? "" : request.getUserMessage();

@@ -23,8 +23,10 @@ public class EchoModelProvider implements ModelProvider {
 
     @Override
     public ModelResponse chat(ModelRequest request) {
-        if (request.getLastToolResult() != null) {
-            return ModelResponse.answer("Tool result: " + request.getLastToolResult().getData());
+        if (request.getLastToolExecutions() != null && !request.getLastToolExecutions().isEmpty()) {
+            int lastIndex = request.getLastToolExecutions().size() - 1;
+            return ModelResponse.answer("Tool result: "
+                    + request.getLastToolExecutions().get(lastIndex).getToolResult().getData());
         }
         return ModelResponse.answer(request.getUserMessage());
     }

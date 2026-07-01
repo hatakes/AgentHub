@@ -408,9 +408,9 @@ query_kingbase_data
 ```java
 public interface ToolRegistry {
 
-    List<AgentTool> listTools();
+    List<AgentTool> list();
 
-    Optional<AgentTool> getTool(String name);
+    Optional<AgentTool> get(String name);
 
     void register(AgentTool tool);
 }
@@ -476,9 +476,7 @@ PostgreSQL
 ```java
 public interface PermissionEngine {
 
-    boolean canCallTool(UserContext user, AgentTool tool, ToolContext context);
-
-    boolean requireApproval(AgentTool tool, ToolContext context);
+    PermissionResult check(UserContext user, AgentTool tool, ToolContext context);
 }
 ```
 

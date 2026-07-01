@@ -374,10 +374,21 @@ public class ModelProviderJsonSupport {
         }
         // 兼容早期只支持单 Tool 的字段，避免 provider 升级后破坏旧测试和旧调用方。
         List<ToolExecutionResult> executions = new ArrayList<ToolExecutionResult>();
+        addDeprecatedSingleToolExecution(request, executions);
+        return executions;
+    }
+
+    /**
+     * 从旧单 Tool 字段补齐执行结果。
+     *
+     * @param request    模型请求
+     * @param executions 标准化结果列表
+     */
+    @SuppressWarnings("deprecation")
+    private void addDeprecatedSingleToolExecution(ModelRequest request, List<ToolExecutionResult> executions) {
         if (request.getLastToolCall() != null && request.getLastToolResult() != null) {
             executions.add(new ToolExecutionResult(request.getLastToolCall(), request.getLastToolResult()));
         }
-        return executions;
     }
 
     private String toolCallId(ToolCall toolCall, int index) {

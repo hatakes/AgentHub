@@ -296,6 +296,17 @@ P0 缺口：
 基于 DelegatingAgentRuntime 继续补日志、指标、Trace、耗时统计这类非侵入增强样例
 ```
 
+P0 已推进补强：
+
+```text
+InMemoryAgentMemory 每 session 消息上限，避免默认内存记忆无限增长
+ModelRequest 旧单 Tool 字段标记兼容，新 provider 优先读取 lastToolExecutions
+Tool 参数 required / 已知类型 / enum 校验前置到权限检查之前
+Tool 结果审计摘要默认脱敏并截断
+Starter HTTP 入口补请求体、sessionId、message 最小校验
+Tool 结果不能作为新指令执行的最小 Prompt Injection 防护提示
+```
+
 P1 缺口：
 
 ```text

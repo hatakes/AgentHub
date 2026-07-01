@@ -18,8 +18,32 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author Sean
  */
 public class InMemoryAgentMemory implements AgentMemory {
+    /** 默认每个会话最多保留的消息数，避免本地内存无限增长。 */
+    public static final int DEFAULT_MAX_MESSAGES_PER_SESSION = 200;
+
     /** 以会话 ID 为 key 的消息存储，使用 ConcurrentHashMap 保证线程安全。 */
     private final Map<String, List<AgentMessage>> messages = new ConcurrentHashMap<String, List<AgentMessage>>();
+    /** 每个会话最多保留的消息数。 */
+    private final int maxMessagesPerSession;
+
+    /**
+     * 创建默认内存会话记忆。
+     */
+    public InMemoryAgentMemory() {
+        this(DEFAULT_MAX_MESSAGES_PER_SESSION);
+    }
+
+    /**
+     * 创建带会话消息上限的内存会话记忆。
+     *
+     * @param maxMessagesPerSession 每个会话最多保留的消息数，必须大于 0
+     */
+    public InMemoryAgentMemory(int maxMessagesPerSession) {
+        if (maxMessagesPerSession <= 0) {
+            throw new IllegalArgumentException("maxMessagesPerSession must be greater than 0");
+        }
+        this.maxMessagesPerSession = maxMessagesPerSession;
+    }
 
     /**
      * 加载指定会话的历史消息。
@@ -46,9 +70,15 @@ public class InMemoryAgentMemory implements AgentMemory {
     public void save(String sessionId, AgentMessage message) {
         String key = normalizeSessionId(sessionId);
         if (!messages.containsKey(key)) {
-            messages.put(key, Collections.synchronizedList(new ArrayList<AgentMessage>()));
+            messages.putIfAbsent(key, Collections.synchronizedList(new ArrayList<AgentMessage>()));
         }
-        messages.get(key).add(message);
+        List<AgentMessage> history = messages.get(key);
+        synchronized (history) {
+            history.add(message);
+            while (history.size() > maxMessagesPerSession) {
+                history.remove(0);
+            }
+        }
     }
 
     /**

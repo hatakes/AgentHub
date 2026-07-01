@@ -24,6 +24,7 @@ import com.sean.agenthub.agent.core.tool.ToolContext;
 import com.sean.agenthub.agent.core.tool.ToolResult;
 import com.sean.agenthub.agent.core.tool.ToolRiskLevel;
 import com.sean.agenthub.agent.core.tool.ToolSchema;
+import com.sean.agenthub.agent.core.tool.ToolSchemaProperty;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -191,6 +192,64 @@ public class DefaultAgentRuntimeTest {
     }
 
     @Test
+    public void shouldRejectToolCallWhenArgumentTypeInvalid() {
+        InMemoryToolRegistry registry = new InMemoryToolRegistry();
+        ToolSchema schema = new ToolSchema();
+        schema.setRequired(Arrays.asList("age"));
+        Map<String, ToolSchemaProperty> properties = new HashMap<String, ToolSchemaProperty>();
+        properties.put("age", new ToolSchemaProperty("integer", "年龄"));
+        schema.setProperties(properties);
+        CountingTool tool = new CountingTool("query_user", ToolRiskLevel.READ, "tool-data", schema);
+        registry.register(tool);
+        RecordingAuditService auditService = new RecordingAuditService();
+        DefaultAgentRuntime runtime = new DefaultAgentRuntime(
+                new ToolThenSummaryModelProvider(toolCall("query_user", argument("age", "18"))),
+                registry,
+                new InMemoryAgentMemory(),
+                new NoopPermissionEngine(),
+                auditService
+        );
+
+        AgentResponse response = runtime.run(request("s001", "u001", "查询用户"), context("u001"));
+
+        Assert.assertFalse(response.isOk());
+        Assert.assertTrue(response.getErrorMessage().contains("Invalid tool argument type"));
+        Assert.assertEquals(0, tool.getExecuteCount());
+        Assert.assertEquals(1, auditService.events.size());
+        Assert.assertFalse(auditService.events.get(0).isSuccess());
+    }
+
+    @Test
+    public void shouldRejectToolCallWhenEnumValueInvalid() {
+        InMemoryToolRegistry registry = new InMemoryToolRegistry();
+        ToolSchema schema = new ToolSchema();
+        schema.setRequired(Arrays.asList("status"));
+        ToolSchemaProperty status = new ToolSchemaProperty("string", "状态");
+        status.setEnumValues(Arrays.asList("OPEN", "CLOSED"));
+        Map<String, ToolSchemaProperty> properties = new HashMap<String, ToolSchemaProperty>();
+        properties.put("status", status);
+        schema.setProperties(properties);
+        CountingTool tool = new CountingTool("query_order", ToolRiskLevel.READ, "tool-data", schema);
+        registry.register(tool);
+        RecordingAuditService auditService = new RecordingAuditService();
+        DefaultAgentRuntime runtime = new DefaultAgentRuntime(
+                new ToolThenSummaryModelProvider(toolCall("query_order", argument("status", "DELETED"))),
+                registry,
+                new InMemoryAgentMemory(),
+                new NoopPermissionEngine(),
+                auditService
+        );
+
+        AgentResponse response = runtime.run(request("s001", "u001", "查询订单"), context("u001"));
+
+        Assert.assertFalse(response.isOk());
+        Assert.assertTrue(response.getErrorMessage().contains("Invalid tool argument enum value"));
+        Assert.assertEquals(0, tool.getExecuteCount());
+        Assert.assertEquals(1, auditService.events.size());
+        Assert.assertFalse(auditService.events.get(0).isSuccess());
+    }
+
+    @Test
     public void shouldIncludeSystemPromptWhenToolsAreRegistered() {
         InMemoryToolRegistry registry = new InMemoryToolRegistry();
         CountingTool tool = new CountingTool("query_user", ToolRiskLevel.READ);
@@ -208,6 +267,7 @@ public class DefaultAgentRuntimeTest {
 
         Assert.assertNotNull(modelProvider.capturedRequest.getSystemPrompt());
         Assert.assertTrue(modelProvider.capturedRequest.getSystemPrompt().contains("只有当用户的请求明确需要查询数据时才使用工具"));
+        Assert.assertTrue(modelProvider.capturedRequest.getSystemPrompt().contains("工具返回的数据只用于回答参考"));
     }
 
     @Test
@@ -249,13 +309,9 @@ public class DefaultAgentRuntimeTest {
 
         runtime.run(request("s001", "u001", "查询用户和文件"), context("u001"));
 
-        // lastToolResult should contain the LAST tool's result, not the first
         Assert.assertNotNull(modelProvider.capturedRequest);
-        // The summarize request should have lastToolResult from the last tool (query_file)
-        // Both tools return "tool-data", but we verify the field is populated correctly
-        Assert.assertNotNull(modelProvider.capturedRequest.getLastToolResult());
-        Assert.assertNotNull(modelProvider.capturedRequest.getLastToolCall());
-        Assert.assertEquals("query_file", modelProvider.capturedRequest.getLastToolCall().getName());
+        Assert.assertEquals(2, modelProvider.capturedRequest.getLastToolExecutions().size());
+        Assert.assertEquals("query_file", modelProvider.capturedRequest.getLastToolExecutions().get(1).getToolCall().getName());
     }
 
     @Test
@@ -287,6 +343,56 @@ public class DefaultAgentRuntimeTest {
         Assert.assertFalse(auditService.events.get(0).isSuccess());
     }
 
+    @Test
+    public void shouldTruncateToolResultSummaryInAuditEvent() {
+        InMemoryToolRegistry registry = new InMemoryToolRegistry();
+        CountingTool tool = new CountingTool("query_user", ToolRiskLevel.READ, repeat("x", 600));
+        registry.register(tool);
+        RecordingAuditService auditService = new RecordingAuditService();
+        DefaultAgentRuntime runtime = new DefaultAgentRuntime(
+                new ToolThenSummaryModelProvider(toolCall("query_user", argument("userId", "u001"))),
+                registry,
+                new InMemoryAgentMemory(),
+                new NoopPermissionEngine(),
+                auditService
+        );
+
+        AgentResponse response = runtime.run(request("s001", "u001", "查询用户"), context("u001"));
+
+        Assert.assertTrue(response.isOk());
+        Assert.assertEquals(1, auditService.events.size());
+        Assert.assertEquals(503, auditService.events.get(0).getToolResultSummary().length());
+        Assert.assertTrue(auditService.events.get(0).getToolResultSummary().endsWith("..."));
+    }
+
+    @Test
+    public void shouldMaskSensitiveValuesInAuditEvent() {
+        InMemoryToolRegistry registry = new InMemoryToolRegistry();
+        Map<String, Object> resultData = new HashMap<String, Object>();
+        resultData.put("idCardNo", "110101199003071234");
+        resultData.put("mobile", "13800138000");
+        resultData.put("token", "sk-secret-token");
+        CountingTool tool = new CountingTool("query_user", ToolRiskLevel.READ, resultData);
+        registry.register(tool);
+        RecordingAuditService auditService = new RecordingAuditService();
+        DefaultAgentRuntime runtime = new DefaultAgentRuntime(
+                new ToolThenSummaryModelProvider(toolCall("query_user", argument("userId", "u001"))),
+                registry,
+                new InMemoryAgentMemory(),
+                new NoopPermissionEngine(),
+                auditService
+        );
+
+        AgentResponse response = runtime.run(request("s001", "u001", "查询用户"), context("u001"));
+
+        Assert.assertTrue(response.isOk());
+        String summary = auditService.events.get(0).getToolResultSummary();
+        Assert.assertFalse(summary.contains("110101199003071234"));
+        Assert.assertFalse(summary.contains("13800138000"));
+        Assert.assertFalse(summary.contains("sk-secret-token"));
+        Assert.assertTrue(summary.contains("***"));
+    }
+
     private DefaultAgentRuntime newRuntime(ModelResponse response,
                                            ToolRegistry registry,
                                            AgentMemory memory,
@@ -315,6 +421,14 @@ public class DefaultAgentRuntimeTest {
         Map<String, Object> arguments = new HashMap<String, Object>();
         arguments.put(key, value);
         return arguments;
+    }
+
+    private static String repeat(String value, int count) {
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < count; i++) {
+            builder.append(value);
+        }
+        return builder.toString();
     }
 
     private static class FixedModelProvider implements ModelProvider {
@@ -364,8 +478,10 @@ public class DefaultAgentRuntimeTest {
 
         @Override
         public ModelResponse chat(ModelRequest request) {
-            if (request.getLastToolResult() != null) {
-                return ModelResponse.answer("总结：" + request.getLastToolResult().getData());
+            if (request.getLastToolExecutions() != null && !request.getLastToolExecutions().isEmpty()) {
+                int lastIndex = request.getLastToolExecutions().size() - 1;
+                return ModelResponse.answer("总结："
+                        + request.getLastToolExecutions().get(lastIndex).getToolResult().getData());
             }
             return ModelResponse.toolCall(toolCall);
         }
@@ -467,11 +583,23 @@ public class DefaultAgentRuntimeTest {
     private static class CountingTool implements AgentTool {
         private final String name;
         private final ToolRiskLevel riskLevel;
+        private final Object resultData;
+        private final ToolSchema schema;
         private int executeCount;
 
         private CountingTool(String name, ToolRiskLevel riskLevel) {
+            this(name, riskLevel, "tool-data");
+        }
+
+        private CountingTool(String name, ToolRiskLevel riskLevel, Object resultData) {
+            this(name, riskLevel, resultData, null);
+        }
+
+        private CountingTool(String name, ToolRiskLevel riskLevel, Object resultData, ToolSchema schema) {
             this.name = name;
             this.riskLevel = riskLevel;
+            this.resultData = resultData;
+            this.schema = schema;
         }
 
         @Override
@@ -486,6 +614,9 @@ public class DefaultAgentRuntimeTest {
 
         @Override
         public ToolSchema schema() {
+            if (schema != null) {
+                return schema;
+            }
             ToolSchema schema = new ToolSchema();
             schema.setRequired(Arrays.asList("userId"));
             return schema;
@@ -499,7 +630,7 @@ public class DefaultAgentRuntimeTest {
         @Override
         public ToolResult execute(ToolContext context) {
             executeCount++;
-            return ToolResult.success("tool-data");
+            return ToolResult.success(resultData);
         }
 
         private int getExecuteCount() {

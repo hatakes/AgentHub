@@ -29,6 +29,9 @@
 2026-06-21 已将 `agent-model-provider-http` 内部实现拆为 `protocol` / `transport` 子包，隔离模型协议 JSON 转换和 JDK HTTP / SSE 传输辅助逻辑。
 2026-06-21 已更新设计文档中的当前缺口和推进顺序，明确下一阶段重点是生产业务接入反馈、真实附件解析、持久化样板、可观测性和治理闭环。
 2026-06-21 已执行局部回归：`mvn -pl agent-core,agent-model-provider-http,agent-spring-boot-starter,agent-document-processing test` 通过。
+2026-06-25 已新增独立设计评审材料：`docs/design-review/` 和 `docs/ds-design/`，用于后续 P0 / P1 缺口收敛跟踪。
+2026-06-25 已完成 P0 生产化补强第一轮：`InMemoryAgentMemory` 增加每 session 消息上限，`ModelRequest` 旧单 Tool 字段标记为兼容字段并迁移示例 provider 到 `lastToolExecutions`，`DefaultAgentRuntime` 补充 Tool 结果不可作为指令执行的最小 Prompt Injection 防护、审计摘要默认脱敏和截断、多 ToolCall MVP 限制说明，`AgentChatController` 增加 HTTP 入口必填字段校验。
+2026-06-25 已完成 Tool 参数校验增强：Runtime 在权限检查前校验 required、已知 JSON Schema 子集类型和 enum 值，避免模型传错参数类型后进入 PermissionEngine 或业务 Tool。
 
 已确认：
 
@@ -186,6 +189,11 @@ MCP 保留为生态互通协议方向，后续优先评估 MCP Java SDK / Spring
 完成 agent-document-processing 错误场景验收：不支持文件类型、空解析结果、不存在 attachmentId
 完成 AgentRuntime 扩展模式说明：接口 + 默认实现 + DelegatingAgentRuntime 可选包装器
 完成 agent-model-provider-http 内部 protocol / transport 拆包和局部回归测试
+完成 InMemoryAgentMemory 每 session 消息上限，避免默认内存记忆无限增长
+完成 ModelRequest 旧单 Tool 字段兼容标记，并迁移 Echo / Example provider 优先读取 lastToolExecutions
+完成 Tool 参数 required / 类型 / enum 校验，参数不合法时不会进入权限和业务 Tool 执行
+完成 Runtime 审计摘要默认脱敏和截断，降低敏感数据直接进入审计日志风险
+完成 Starter HTTP 入口请求体、sessionId、message 最小校验
 ```
 
 当前 agent-core 包结构：
